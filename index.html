@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quán Trọ Nhà Mèo - Kỷ Nguyên Mới</title>
+  <title>Quán Trọ Nhà Mèo - Nơi Dừng Chân Thảnh Thơi</title>
   
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,24 +12,18 @@
 
   <style>
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes float-note { 0% { transform: translateY(0px) scale(0.8); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-40px) translateX(15px) scale(1.2); opacity: 0; } }
     @keyframes falling-leaf { 0% { transform: translate(0, -10px) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translate(100px, 100vh) rotate(360deg); opacity: 0; } }
-    @keyframes pop-in { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-    
+    @keyframes firefly-glow { 0%, 100% { opacity: 0.2; transform: scale(0.8) translateY(0); } 50% { opacity: 0.9; transform: scale(1.3) translateY(-15px); } }
     .animate-spin-slow { animation: spin-slow 8s linear infinite; }
-    .animate-pop-in { animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .animate-float-1 { animation: float-note 2.5s ease-in-out infinite; }
+    .animate-float-2 { animation: float-note 3s ease-in-out 1s infinite; }
     .leaf-particle { position: fixed; pointer-events: none; z-index: 1; animation: falling-leaf 12s linear infinite; }
-    
+    .firefly-particle { position: fixed; pointer-events: none; z-index: 1; border-radius: 50%; animation: firefly-glow 4s ease-in-out infinite; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 4px; }
-
-    /* House Drag & Drop Area */
-    .house-canvas {
-      background-image: url('https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1000&auto=format&fit=crop');
-      background-size: cover;
-      background-position: center;
-      position: relative;
-    }
+    .drag-over { border-color: #10b981 !important; background-color: rgba(16, 185, 129, 0.1) !important; }
   </style>
 </head>
 <body class="transition-colors duration-500 min-h-screen">
@@ -38,222 +32,573 @@
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo } = React;
 
-    // --- HELPER: CONVERT FILE TO BASE64 ---
-    const fileToBase64 = (file, callback) => {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => callback(e.target.result);
-      reader.readAsDataURL(file);
-    };
-
-    // --- MOCK DATABASE ---
-    const INITIAL_DATA = {
+    // ==========================================
+    // INITIAL MOCK DATABASE
+    // ==========================================
+    const INITIAL_DB = {
+      users: [],
       rooms: [
-        { id: 1, name: "Phòng Trà Mây Ngủ", image: "https://picsum.photos/seed/room1/600/400", tags: ["Thư giãn"], note: "Có ban công", idea: "Gỗ mộc", isCompleted: false, link: "", votes: 42, pinRank: 1, createdAt: Date.now() - 30000 },
-        { id: 5, name: "Căn Nhà Gỗ Cũ", image: "https://picsum.photos/seed/room5/600/400", tags: ["Hoàn thành"], note: "Đã hoạt động", idea: "Căn đầu tiên", isCompleted: true, link: "https://google.com", votes: 89, pinRank: 0, createdAt: Date.now() - 100000 }
+        { id: 1, name: "Phòng Trà Mây Ngủ", image: "https://picsum.photos/seed/room1/600/400", tags: ["Thư giãn"], note: "Ban công ngắm suối", idea: "Gỗ mộc và rèm lụa", isCompleted: false, link: "", votes: 42, pinRank: 1, createdAt: Date.now() },
+        { id: 2, name: "Gác Mái Đom Đóm", image: "https://picsum.photos/seed/room2/600/400", tags: ["Lãng mạn"], note: "Kính thiên văn", idea: "Trần nhà kính", isCompleted: false, link: "", votes: 35, pinRank: 2, createdAt: Date.now() - 1000 },
+        { id: 3, name: "Căn Nhà Gỗ (Đã Mở)", image: "https://picsum.photos/seed/room5/600/400", tags: ["Hoàn thành"], note: "Đã hoạt động", idea: "Căn đầu tiên", isCompleted: true, link: "https://google.com", votes: 89, pinRank: 0, createdAt: Date.now() - 5000 }
       ],
       songs: [
         { id: 1, title: "Khúc Hát Ban Mai", artist: "Mèo Du Ca", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }
       ],
-      quizzes: [
-        { id: 1, question: "Loài hoa nào thường nở rộ báo hiệu mùa xuân?", options: ["Hoa Cúc", "Hoa Mai & Đào", "Hướng Dương", "Bồ Công Anh"], correctIndex: 1 }
-      ],
-      settings: {
-        rewards: { water: 25, star: 20, diary: 15, story: 10, quiz: 20, tea: 20, lostItem: 5, fishCommon: 8, fishRare: 15, fishLegend: 40 },
-        gameImages: { garden: "", fishing: "", star: "", diary: "", story: "", quiz: "", tea: "" }
-      },
       shopItems: [
-        { id: "giuong_nem", name: "Giường Nệm", category: "Nội thất", price: 40, icon: "🛏️" },
-        { id: "ke_sach", name: "Kệ Sách Cổ", category: "Nội thất", price: 35, icon: "📚" },
-        { id: "ho_nuoc", name: "Hồ Nước Nhỏ", category: "Sân vườn", price: 50, icon: "⛲" },
-        { id: "meo_cam", name: "Mèo Cam Béo", category: "Thú cưng", price: 80, icon: "🐈" }
+        { id: "giuong_nem", name: "Giường Nệm Bông", category: "Nội thất", price: 40, icon: "🛏️", image: "" },
+        { id: "cay_phong", name: "Cây Phong Đỏ", category: "Sân vườn", price: 30, icon: "🍁", image: "" },
+        { id: "meo_cam", name: "Mèo Cam Béo", category: "Thú cưng", price: 80, icon: "🐈", image: "" }
       ],
-      user: {
-        name: "Vị Khách Đáng Yêu",
-        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=catguest",
-        loc: 150,
-        houseName: "Tổ Ấm Của Mèo",
-        houseItems: ["giuong_nem", "ke_sach"], // Inventory
-        houseLayout: [], // Items placed in canvas: { id, uniqueId, icon, x, y }
-        checkInStreak: 3,
-        lastCheckIn: null,
-        diaryEntries: [],
-        storyChapters: [],
-        gardenProgress: 0,
-        daily: { date: "", water: 0, fish: 0, star: 0, diary: 0, story: 0, tea: 0, quiz: 0, lostItemsFound: 0, maxLostItems: 6 }
-      }
+      quizzes: [
+        { id: 1, q: "Loài hoa nào thường nở rộ báo hiệu mùa xuân về bên hiên nhà gỗ?", options: ["Hoa Cúc", "Hoa Mai & Đào", "Hoa Hướng Dương", "Hoa Bồ Công Anh"], ansIdx: 1 },
+        { id: 2, q: "Lộc (🍀) trong Quán Trọ không thể dùng để làm gì?", options: ["Mua nội thất", "Đổi tên biển nhà", "Mua lợi thế chơi game", "Mua thú cưng"], ansIdx: 2 }
+      ],
+      settings: { maxLostItems: 8 }
     };
+
+    // Helper: Reset Daily Limits (00:00)
+    const getFreshDailyLimits = () => ({
+      date: new Date().toDateString(),
+      water: 0, fish: 0, star: 0, diary: 0, story: 0, tea: 0, quiz: 0, checkIn: 0,
+      lostItemsCaught: 0,
+      lostItemsMaxForToday: Math.floor(Math.random() * 5) + 6 // 6 to 10 items
+    });
+
+    // Helper: Default User Schema
+    const createNewUser = (email, password, name) => ({
+      id: Date.now().toString(),
+      email, password, name,
+      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${name}`,
+      loc: 100,
+      houseName: "Căn Nhà Nhỏ",
+      hasCustomHouseName: false,
+      checkInStreak: 0,
+      inventory: [], // string IDs from shop
+      placedItems: [], // { uid: string, shopId: string, x: number, y: number, area: 'house'|'garden' }
+      fishCollection: [],
+      teaRecipes: [],
+      storyChapters: [],
+      diaryEntries: [],
+      dailyLimits: getFreshDailyLimits()
+    });
 
     function App() {
       const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
-      const [db, setDb] = useState(() => {
-        const saved = localStorage.getItem("quan_tro_db_v2");
-        return saved ? JSON.parse(saved) : INITIAL_DATA;
-      });
-      const [activeTab, setActiveTab] = useState("rooms"); // rooms | house | games | shop | admin
+      const [db, setDb] = useState(() => JSON.parse(localStorage.getItem("quan_tro_db")) || INITIAL_DB);
+      const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem("user_session")) || null);
       const [isAdmin, setIsAdmin] = useState(false);
-      const [showLoginModal, setShowLoginModal] = useState(false);
+      
+      const [activeTab, setActiveTab] = useState("rooms");
+      const [showAuthModal, setShowAuthModal] = useState(false);
+      const [authMode, setAuthMode] = useState("login"); // 'login' | 'register' | 'admin'
       const [notification, setNotification] = useState("");
+      const [showMusicDrawer, setShowMusicDrawer] = useState(false);
 
-      // RESET DAILY AT 00:00
+      // Save states
+      useEffect(() => { localStorage.setItem("quan_tro_db", JSON.stringify(db)); }, [db]);
+      useEffect(() => { localStorage.setItem("theme", theme); }, [theme]);
       useEffect(() => {
-        const todayStr = new Date().toDateString();
-        if (db.user.daily?.date !== todayStr) {
-          const maxLost = Math.floor(Math.random() * 5) + 6;
+        if (currentUser) {
+          localStorage.setItem("user_session", JSON.stringify(currentUser));
+          // Sync current user to DB users list
           setDb(prev => ({
             ...prev,
-            user: { ...prev.user, daily: { date: todayStr, water: 0, fish: 0, star: 0, diary: 0, story: 0, tea: 0, quiz: 0, lostItemsFound: 0, maxLostItems: maxLost } }
+            users: prev.users.map(u => u.id === currentUser.id ? currentUser : u)
           }));
+        } else {
+          localStorage.removeItem("user_session");
         }
-      }, []);
+      }, [currentUser]);
 
-      // SAVE DB
-      useEffect(() => { localStorage.setItem("quan_tro_db_v2", JSON.stringify(db)); }, [db]);
-      useEffect(() => { localStorage.setItem("theme", theme); }, [theme]);
+      // Daily Reset Check
+      useEffect(() => {
+        if (currentUser) {
+          const today = new Date().toDateString();
+          if (currentUser.dailyLimits.date !== today) {
+            updateUser({ dailyLimits: getFreshDailyLimits() });
+          }
+        }
+      }, [currentUser]);
 
       const notify = (msg) => { setNotification(msg); setTimeout(() => setNotification(""), 3500); };
+
+      const updateUser = (updates) => {
+        setCurrentUser(prev => ({ ...prev, ...updates }));
+      };
+
       const addLoc = (amount, reason) => {
-        setDb(prev => ({ ...prev, user: { ...prev.user, loc: prev.user.loc + amount } }));
+        if (!currentUser) return;
+        updateUser({ loc: currentUser.loc + amount });
         notify(`🍀 +${amount} Lộc (${reason})`);
       };
 
-      // AUDIO
-      const [isPlaying, setIsPlaying] = useState(false);
-      const audioRef = useRef(new Audio());
-      useEffect(() => { if (db.songs.length > 0) audioRef.current.src = db.songs[0].url; }, [db.songs]);
-      const togglePlay = () => {
-        if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); } 
-        else if (db.songs.length > 0) audioRef.current.play().then(() => setIsPlaying(true)).catch(()=>notify("Hãy nhấp vào trang 1 lần trước khi phát nhạc!"));
+      const checkLimit = (gameKey) => {
+        if (!currentUser) { notify("Vui lòng đăng nhập Khách để chơi!"); return false; }
+        if (currentUser.dailyLimits[gameKey] >= 1) {
+          notify("Hôm nay bạn đã dùng hết lượt cho hoạt động này rồi. Mai quay lại nhé! 🌙");
+          return false;
+        }
+        return true;
       };
 
-      // CHECK-IN
-      const handleCheckIn = () => {
-        const today = new Date().toDateString();
-        if (db.user.lastCheckIn === today) return notify("Hôm nay bạn đã ghé rồi!");
-        setDb(prev => ({ ...prev, user: { ...prev.user, loc: prev.user.loc + 20, lastCheckIn: today } }));
-        notify("🎉 Nhận +20 🍀 Lộc ghé thăm!");
-      };
-
-      // UPLOAD AVATAR
-      const handleAvatarChange = (e) => {
-        fileToBase64(e.target.files[0], (base64Str) => {
-          setDb(prev => ({ ...prev, user: { ...prev.user, avatar: base64Str } }));
-          notify("Đã thay đổi ảnh đại diện!");
+      const useLimit = (gameKey) => {
+        updateUser({
+          dailyLimits: { ...currentUser.dailyLimits, [gameKey]: currentUser.dailyLimits[gameKey] + 1 }
         });
       };
 
+      // --- AUDIO ENGINE ---
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [currentSongIndex, setCurrentSongIndex] = useState(0);
+      const [currentTime, setCurrentTime] = useState(0);
+      const [duration, setDuration] = useState(0);
+      const audioRef = useRef(new Audio());
+
+      useEffect(() => {
+        if (db.songs.length > 0) {
+          const randIdx = Math.floor(Math.random() * db.songs.length);
+          setCurrentSongIndex(randIdx);
+          audioRef.current.src = db.songs[randIdx].url;
+        }
+      }, []);
+
+      useEffect(() => {
+        const audio = audioRef.current;
+        const updateTime = () => setCurrentTime(audio.currentTime);
+        const updateDuration = () => setDuration(audio.duration || 0);
+        const handleEnded = () => {
+          setCurrentSongIndex(prev => {
+            const next = (prev + 1) % db.songs.length;
+            audio.src = db.songs[next].url;
+            audio.play().catch(() => setIsPlaying(false));
+            return next;
+          });
+        };
+        audio.addEventListener("timeupdate", updateTime);
+        audio.addEventListener("loadedmetadata", updateDuration);
+        audio.addEventListener("ended", handleEnded);
+        return () => {
+          audio.removeEventListener("timeupdate", updateTime);
+          audio.removeEventListener("loadedmetadata", updateDuration);
+          audio.removeEventListener("ended", handleEnded);
+        };
+      }, [db.songs]);
+
+      const togglePlay = () => {
+        if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); } 
+        else { audioRef.current.play().then(() => setIsPlaying(true)).catch(() => notify("Nhấp lại đĩa nhạc để phát âm thanh!")); }
+      };
+      const playSong = (index) => { setCurrentSongIndex(index); audioRef.current.src = db.songs[index].url; audioRef.current.play().then(() => setIsPlaying(true)); };
+
+      // --- LOST ITEMS ENGINE ---
+      const [lostItem, setLostItem] = useState(null);
+      useEffect(() => {
+        if (!currentUser || activeTab === "admin") return;
+        const limits = currentUser.dailyLimits;
+        if (limits.lostItemsCaught >= limits.lostItemsMaxForToday) return;
+
+        const timer = setInterval(() => {
+          if (Math.random() > 0.5 && !lostItem) {
+            const items = ["🍃", "🗝️", "🌸", "🐈", "⭐", "🎵", "🦋"];
+            setLostItem({
+              id: Date.now(),
+              icon: items[Math.floor(Math.random() * items.length)],
+              top: Math.floor(Math.random() * 70 + 15) + "%",
+              left: Math.floor(Math.random() * 70 + 15) + "%"
+            });
+            // Tồn tại 5-8s rồi biến mất
+            setTimeout(() => setLostItem(null), Math.random() * 3000 + 5000);
+          }
+        }, 12000);
+        return () => clearInterval(timer);
+      }, [currentUser, lostItem, activeTab]);
+
+      const collectLostItem = () => {
+        addLoc(5, "Tìm thấy vật thất lạc!");
+        updateUser({
+          dailyLimits: { ...currentUser.dailyLimits, lostItemsCaught: currentUser.dailyLimits.lostItemsCaught + 1 }
+        });
+        setLostItem(null);
+      };
+
+      const handleAuth = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const email = fd.get("email");
+        const password = fd.get("password");
+        const name = fd.get("name");
+
+        if (authMode === "admin") {
+          if (password === "bhnt2006") {
+            setIsAdmin(true); setShowAuthModal(false); setActiveTab("admin"); notify("Đăng nhập Admin thành công!");
+          } else { notify("Mật khẩu Admin sai!"); }
+        } else if (authMode === "register") {
+          if (db.users.find(u => u.email === email)) return notify("Email đã tồn tại!");
+          const newUser = createNewUser(email, password, name || "Khách Mới");
+          setDb(prev => ({ ...prev, users: [...prev.users, newUser] }));
+          setCurrentUser(newUser); setShowAuthModal(false); notify("Đăng ký thành công!");
+        } else {
+          const user = db.users.find(u => u.email === email && u.password === password);
+          if (user) { setCurrentUser(user); setShowAuthModal(false); notify("Đăng nhập thành công!"); }
+          else { notify("Sai email hoặc mật khẩu!"); }
+        }
+      };
+
       const isDark = theme === "dark";
-      const bgClasses = isDark ? "bg-slate-950 text-indigo-100" : "bg-emerald-50 text-slate-800";
-      const cardBg = isDark ? "bg-slate-900/80 border-slate-800 backdrop-blur-md" : "bg-white/90 border-emerald-100/80 backdrop-blur-md shadow-sm";
+      const bgClasses = isDark ? "bg-slate-950 text-indigo-100" : "bg-emerald-50/70 text-slate-800";
+      const cardBg = isDark ? "bg-slate-900/80 border-slate-800 backdrop-blur-md" : "bg-white/85 border-emerald-100/80 backdrop-blur-md shadow-sm";
 
       return (
         <div className={`min-h-screen relative overflow-x-hidden ${bgClasses}`}>
-          {!isDark && <div className="leaf-particle" style={{ left: "10%", animationDelay: "0s" }}>🍃</div>}
+          {/* Particles */}
+          {!isDark ? (
+            <>
+              <div className="leaf-particle" style={{ left: "10%", animationDelay: "0s" }}>🍃</div>
+              <div className="leaf-particle" style={{ left: "35%", animationDelay: "4s" }}>🌸</div>
+              <div className="leaf-particle" style={{ left: "65%", animationDelay: "2s" }}>🍃</div>
+            </>
+          ) : (
+            <>
+              <div className="firefly-particle bg-yellow-300 w-2 h-2" style={{ top: "20%", left: "15%", boxShadow: "0 0 10px #fef08a" }}></div>
+              <div className="firefly-particle bg-yellow-300 w-1.5 h-1.5" style={{ top: "60%", left: "45%", animationDelay: "2s" }}></div>
+            </>
+          )}
 
-          {/* Toast */}
+          {/* Lost Item */}
+          {lostItem && (
+            <button onClick={collectLostItem} style={{ top: lostItem.top, left: lostItem.left }} className="fixed z-40 text-2xl p-2 bg-white/40 dark:bg-slate-800/60 rounded-full shadow-lg hover:scale-125 transition-transform animate-bounce">
+              {lostItem.icon}
+            </button>
+          )}
+
+          {/* Notification */}
           {notification && (
-            <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 px-5 py-2.5 bg-emerald-600 text-white rounded-full shadow-xl text-sm font-bold animate-pulse">
+            <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 px-5 py-2.5 bg-emerald-600 dark:bg-indigo-600 text-white rounded-full shadow-xl text-sm font-medium animate-pulse">
               {notification}
             </div>
           )}
 
-          {/* HEADER CHÍNH */}
-          <header className={`border-b sticky top-0 z-30 ${isDark ? "border-slate-800 bg-slate-950/90" : "border-emerald-100 bg-white/90"} backdrop-blur-md`}>
+          {/* HEADER */}
+          <header className={`border-b sticky top-0 z-30 ${isDark ? "border-slate-800 bg-slate-950/80" : "border-emerald-100 bg-white/80"} backdrop-blur-md`}>
             <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-              
-              {/* CỤM AVATAR & USER (Bên Trái) */}
-              <div className="flex items-center gap-3">
-                <label className="cursor-pointer relative group">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-emerald-400 bg-emerald-100">
-                    <img src={db.user.avatar} className="w-full h-full object-cover" alt="Avatar" />
-                  </div>
-                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-white text-[10px] font-bold">Đổi ảnh</span>
-                  </div>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-                </label>
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab("rooms")}>
+                <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-emerald-400 bg-emerald-100">
+                  <img src="ChatGPT_Image_21_56_27_31_thg_7__2026-removebg-preview.png" alt="Logo" onError={(e)=>e.target.src="https://api.dicebear.com/7.x/bottts/svg?seed=MeoLogo"} className="w-full h-full object-cover" />
+                </div>
                 <div>
-                  <input 
-                    value={db.user.name} 
-                    onChange={e => setDb(prev => ({...prev, user: {...prev.user, name: e.target.value}}))}
-                    className="font-bold text-lg tracking-wide text-emerald-800 dark:text-indigo-200 bg-transparent outline-none w-32 md:w-48"
-                  />
-                  <p className="text-xs text-emerald-600 dark:text-indigo-400">Chủ nhà</p>
+                  <h1 className="font-bold text-lg text-emerald-800 dark:text-indigo-200">Quán trọ nhà Mèo</h1>
+                  <p className="text-xs opacity-80">Nơi dừng chân thảnh thơi</p>
                 </div>
               </div>
 
-              {/* NAV DESKTOP */}
-              <nav className="hidden lg:flex items-center gap-1">
+              <nav className="hidden md:flex items-center gap-1">
                 {[
-                  { id: "rooms", label: "Phòng", icon: "🚪" },
-                  { id: "house", label: "Nhà Của Tôi", icon: "🏡" },
-                  { id: "games", label: "Góc Thư Giãn", icon: "🎮" },
+                  { id: "rooms", label: "Phòng Trọ", icon: "🚪" },
+                  { id: "house", label: "Nhà Riêng", icon: "🏡" },
+                  { id: "games", label: "Góc Giải Trí", icon: "🎮" },
                   { id: "shop", label: "Cửa Hàng", icon: "🛍️" },
                   ...(isAdmin ? [{ id: "admin", label: "Quản Trị", icon: "⚙️" }] : [])
                 ].map(tab => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${activeTab === tab.id ? (isDark ? "bg-indigo-600 text-white" : "bg-emerald-600 text-white") : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"}`}>
-                    <span>{tab.icon}</span> <span>{tab.label}</span>
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 ${activeTab === tab.id ? (isDark ? "bg-indigo-600 text-white" : "bg-emerald-600 text-white") : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"}`}>
+                    {tab.icon} {tab.label}
                   </button>
                 ))}
               </nav>
 
-              {/* CONTROLS */}
-              <div className="flex items-center gap-2">
-                <div className={`px-3 py-1.5 rounded-full text-xs font-bold border ${isDark ? "bg-slate-900 border-indigo-900 text-yellow-300" : "bg-emerald-100/70 border-emerald-200 text-emerald-800"}`}>
-                  🍀 {db.user.loc}
-                </div>
-                <button onClick={handleCheckIn} className={`hidden md:block px-3 py-1.5 rounded-full text-xs font-bold shadow ${isDark ? "bg-amber-600 text-white" : "bg-amber-500 text-white"}`}>🍀 Ghé Trọ</button>
+              <div className="flex items-center gap-2.5">
+                {currentUser && (
+                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${isDark ? "bg-slate-900 border-indigo-900/60 text-yellow-300" : "bg-emerald-100/70 border-emerald-200 text-emerald-800"}`}>
+                    🍀 {currentUser.loc}
+                  </div>
+                )}
                 <button onClick={() => setTheme(isDark ? "light" : "dark")} className="p-2 rounded-full hover:bg-black/5 text-sm">{isDark ? "🌙" : "☀️"}</button>
-                {!isAdmin ? (
-                  <button onClick={() => setShowLoginModal(true)} className="text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg">Admin</button>
+                
+                {currentUser ? (
+                  <div className="flex items-center gap-2">
+                    <img src={currentUser.avatar} className="w-8 h-8 rounded-full border border-emerald-500" />
+                    <button onClick={() => { setCurrentUser(null); setIsAdmin(false); setActiveTab("rooms"); }} className="text-xs px-2 py-1 rounded-lg bg-rose-500/20 text-rose-500 font-bold">Thoát</button>
+                  </div>
                 ) : (
-                  <button onClick={() => { setIsAdmin(false); setActiveTab("rooms"); notify("Đã thoát Admin"); }} className="text-xs px-2.5 py-1.5 bg-rose-500/20 text-rose-500 font-bold rounded-lg">Thoát</button>
+                  <button onClick={() => { setAuthMode("login"); setShowAuthModal(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold">Đăng nhập Khách</button>
+                )}
+                {!isAdmin && (
+                  <button onClick={() => { setAuthMode("admin"); setShowAuthModal(true); }} className="text-xs opacity-50 hover:opacity-100">Admin</button>
                 )}
               </div>
             </div>
-
-            {/* NAV MOBILE */}
-            <div className="flex lg:hidden overflow-x-auto px-4 py-2 gap-2 border-t border-black/5 text-xs">
-              <button onClick={() => setActiveTab("rooms")} className={`px-3 py-1.5 rounded-full whitespace-nowrap ${activeTab === 'rooms' ? 'font-bold bg-emerald-500/20' : ''}`}>🚪 Phòng</button>
-              <button onClick={() => setActiveTab("house")} className={`px-3 py-1.5 rounded-full whitespace-nowrap ${activeTab === 'house' ? 'font-bold bg-emerald-500/20' : ''}`}>🏡 Nhà Riêng</button>
-              <button onClick={() => setActiveTab("games")} className={`px-3 py-1.5 rounded-full whitespace-nowrap ${activeTab === 'games' ? 'font-bold bg-emerald-500/20' : ''}`}>🎮 Games</button>
-              <button onClick={() => setActiveTab("shop")} className={`px-3 py-1.5 rounded-full whitespace-nowrap ${activeTab === 'shop' ? 'font-bold bg-emerald-500/20' : ''}`}>🛍️ Cửa Hàng</button>
-              {isAdmin && <button onClick={() => setActiveTab("admin")} className="px-3 py-1.5 rounded-full whitespace-nowrap text-rose-500 font-bold">⚙️ Quản Trị</button>}
-            </div>
           </header>
 
-          {/* MAIN CONTAINER */}
-          <main className="max-w-6xl mx-auto px-4 py-8 relative z-10 pb-28">
-            {activeTab === "rooms" && <RoomsView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} />}
-            {activeTab === "house" && <HouseView db={db} setDb={setDb} notify={notify} cardBg={cardBg} />}
-            {activeTab === "games" && <MiniGamesView db={db} setDb={setDb} addLoc={addLoc} notify={notify} cardBg={cardBg} isDark={isDark} fileToBase64={fileToBase64} />}
-            {activeTab === "shop" && <ShopView db={db} setDb={setDb} notify={notify} cardBg={cardBg} />}
-            {activeTab === "admin" && isAdmin && <AdminView db={db} setDb={setDb} notify={notify} cardBg={cardBg} fileToBase64={fileToBase64} />}
+          <main className="max-w-6xl mx-auto px-4 py-8 pb-28">
+            {activeTab === "rooms" && <RoomsView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} currentUser={currentUser} />}
+            {activeTab === "house" && <HouseView db={db} currentUser={currentUser} updateUser={updateUser} notify={notify} cardBg={cardBg} isDark={isDark} />}
+            {activeTab === "games" && <MiniGamesView db={db} setDb={setDb} currentUser={currentUser} updateUser={updateUser} addLoc={addLoc} checkLimit={checkLimit} useLimit={useLimit} notify={notify} cardBg={cardBg} isDark={isDark} />}
+            {activeTab === "shop" && <ShopView db={db} currentUser={currentUser} updateUser={updateUser} notify={notify} cardBg={cardBg} isDark={isDark} />}
+            {activeTab === "admin" && isAdmin && <AdminView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} />}
           </main>
 
-          {/* MUSIC DISC */}
+          {/* MUSIC PLAYER */}
           <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
-            <div onClick={togglePlay} className={`w-14 h-14 rounded-full border-4 cursor-pointer shadow-xl flex items-center justify-center transition-transform hover:scale-105 ${isDark ? "border-slate-800 bg-slate-900" : "border-emerald-100 bg-slate-900"} ${isPlaying ? "animate-spin-slow" : ""}`}>
-              <div className="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center">
-                <div className="w-5 h-5 rounded-full bg-amber-600 flex items-center justify-center text-[9px] text-white font-bold">{isPlaying ? "⏸" : "▶"}</div>
+            {isPlaying && <div className="relative w-12 h-6 pointer-events-none mb-1 text-emerald-500 font-bold"><span className="absolute left-2 animate-float-1">🎵</span><span className="absolute right-2 animate-float-2">🎶</span></div>}
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowMusicDrawer(!showMusicDrawer)} className={`p-2.5 rounded-full shadow-lg ${isDark ? "bg-slate-800" : "bg-white"} text-xl`}>📻</button>
+              <div onClick={togglePlay} className={`w-14 h-14 rounded-full border-4 shadow-xl flex items-center justify-center cursor-pointer ${isDark ? "border-slate-800 bg-slate-900" : "border-emerald-100 bg-slate-900"} ${isPlaying ? "animate-spin-slow" : ""}`}>
+                <div className="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-amber-600 flex items-center justify-center text-[9px] text-white font-bold">{isPlaying ? "⏸" : "▶"}</div>
+                </div>
               </div>
+            </div>
+            {showMusicDrawer && (
+              <div className={`mt-3 w-80 p-4 rounded-2xl shadow-2xl border ${cardBg}`}>
+                <div className="flex justify-between items-center mb-3"><h4 className="font-bold text-sm">Giai Điệu Quán Trọ</h4><button onClick={() => setShowMusicDrawer(false)}>✕</button></div>
+                <div className="mb-3 p-2.5 rounded-xl bg-black/5 text-xs font-semibold"><p className="truncate">{db.songs[currentSongIndex]?.title}</p><p className="opacity-70 text-[10px]">{db.songs[currentSongIndex]?.artist}</p></div>
+                <input type="range" min="0" max={duration || 100} value={currentTime} onChange={(e) => audioRef.current.currentTime = Number(e.target.value)} className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer mb-3 accent-emerald-600" />
+                <div className="max-h-40 overflow-y-auto space-y-1 text-xs">
+                  {db.songs.map((s, idx) => (
+                    <div key={s.id} onClick={() => playSong(idx)} className={`p-2 rounded-lg cursor-pointer flex justify-between ${currentSongIndex === idx ? "bg-emerald-500/20 font-bold" : "hover:bg-black/5"}`}>
+                      <span>{s.title}</span><span>{currentSongIndex === idx && isPlaying ? "🎵" : "▶"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* AUTH MODAL */}
+          {showAuthModal && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className={`max-w-sm w-full p-6 rounded-2xl shadow-2xl border ${cardBg}`}>
+                <h3 className="font-bold text-lg mb-4 text-center">
+                  {authMode === 'admin' ? "Đăng Nhập Quản Trị" : (authMode === 'login' ? "Khách Đăng Nhập" : "Đăng Ký Khách Mới")}
+                </h3>
+                <form onSubmit={handleAuth} className="space-y-3">
+                  {authMode === 'register' && <input name="name" placeholder="Tên của bạn" required className="w-full p-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />}
+                  {authMode !== 'admin' && <input name="email" type="email" placeholder="Email" required className="w-full p-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />}
+                  <input name="password" type="password" placeholder="Mật khẩu" required className="w-full p-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  
+                  <div className="flex justify-between items-center pt-2">
+                    {authMode !== 'admin' ? (
+                      <button type="button" onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-xs text-emerald-600 font-bold underline">
+                        {authMode === 'login' ? "Chưa có tài khoản?" : "Đã có tài khoản?"}
+                      </button>
+                    ) : <div></div>}
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setShowAuthModal(false)} className="px-3 py-2 rounded-xl text-xs bg-black/5 font-bold">Hủy</button>
+                      <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Xác nhận</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ==========================================
+    // MODULE 1: ROOMS
+    // ==========================================
+    function RoomsView({ db, setDb, notify, cardBg, isDark, currentUser }) {
+      const [sortBy, setSortBy] = useState("newest");
+      const handleVote = (roomId) => {
+        if (!currentUser) return notify("Vui lòng đăng nhập để chấm hóng!");
+        setDb(prev => ({ ...prev, rooms: prev.rooms.map(r => r.id === roomId ? { ...r, votes: r.votes + 1 } : r) }));
+        notify("Chấm hóng thành công! 💖");
+      };
+      const pinnedRooms = db.rooms.filter(r => r.pinRank > 0 && !r.isCompleted).sort((a, b) => a.pinRank - b.pinRank);
+      const otherRooms = db.rooms.filter(r => r.pinRank === 0 && !r.isCompleted);
+      sortBy === "votes" ? otherRooms.sort((a,b) => b.votes - a.votes) : otherRooms.sort((a,b) => b.createdAt - a.createdAt);
+      const completedRooms = db.rooms.filter(r => r.isCompleted).sort((a,b) => b.votes - a.votes);
+
+      return (
+        <div className="space-y-8">
+          <div className={`p-8 rounded-3xl border ${cardBg} text-center space-y-2`}>
+            <span className="text-3xl">🌸 🍃</span>
+            <h2 className="text-2xl font-black">Các Căn Phòng Sắp Ra Mắt</h2>
+            <p className="text-xs opacity-75">Khám phá và "Chấm hóng" những không gian mới nhất.</p>
+          </div>
+          {pinnedRooms.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg">📌 Top Phòng Sắp Ra Mắt</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{pinnedRooms.map(r => <RoomCard key={r.id} room={r} onVote={()=>handleVote(r.id)} isPinned rank={r.pinRank} cardBg={cardBg} />)}</div>
+            </div>
+          )}
+          <div className="space-y-4 border-t border-black/5 pt-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-lg">🚪 Tất Cả Phòng Khác</h3>
+              <div className="flex gap-1 p-1 bg-black/5 rounded-xl text-xs font-semibold">
+                <button onClick={() => setSortBy("newest")} className={`px-2 py-1 rounded ${sortBy==='newest'?'bg-white shadow':''}`}>Mới nhất</button>
+                <button onClick={() => setSortBy("votes")} className={`px-2 py-1 rounded ${sortBy==='votes'?'bg-white shadow':''}`}>Nhiều vote</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{[...otherRooms, ...completedRooms].map(r => <RoomCard key={r.id} room={r} onVote={()=>handleVote(r.id)} cardBg={cardBg} />)}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function RoomCard({ room, onVote, isPinned, rank, cardBg }) {
+      return (
+        <div className={`rounded-2xl overflow-hidden border ${cardBg} hover:-translate-y-1 transition-transform relative flex flex-col`}>
+          {isPinned && <div className="absolute top-2 left-2 px-2 py-0.5 bg-amber-500 text-white text-xs font-bold rounded shadow z-10">Top {rank}</div>}
+          {room.isCompleted && <div className="absolute top-2 right-2 px-2 py-0.5 bg-emerald-600 text-white text-xs font-bold rounded shadow z-10">✓ Đã Hoàn Thành</div>}
+          <div className="h-40 bg-slate-200 relative overflow-hidden">
+            <img src={room.image} className="w-full h-full object-cover" />
+            <div className="absolute bottom-2 left-2 flex gap-1">{room.tags.map(t=><span key={t} className="px-1.5 py-0.5 bg-white/80 text-[10px] font-bold rounded">#{t}</span>)}</div>
+          </div>
+          <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
+            <div><h4 className="font-bold">{room.name}</h4><p className="text-xs opacity-75 mt-1"><b>Ghi chú:</b> {room.note}</p><p className="text-xs opacity-75"><b>Ý tưởng:</b> {room.idea}</p></div>
+            <div className="flex justify-between items-center pt-2 border-t border-black/10">
+              <span className="text-xs font-bold opacity-80">👀 {room.votes} hóng</span>
+              {room.isCompleted ? <a href={room.link} target="_blank" className="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg shadow">Ghé Ngay →</a> : <button onClick={onVote} className="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg shadow active:scale-95">Chấm hóng</button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // MODULE 2: INTERACTIVE HOUSE & GARDEN (Drag & Drop)
+    // ==========================================
+    function HouseView({ db, currentUser, updateUser, notify, cardBg }) {
+      if (!currentUser) return <div className="text-center p-10 font-bold">Vui lòng đăng nhập để xem Nhà Riêng.</div>;
+
+      const [customName, setCustomName] = useState("");
+      const [showRename, setShowRename] = useState(false);
+      const [dragItem, setDragItem] = useState(null);
+
+      // Map owned item IDs to Shop Item details
+      const inventoryDetails = currentUser.inventory.map(invId => db.shopItems.find(s => s.id === invId)).filter(Boolean);
+
+      const handleRename = (e) => {
+        e.preventDefault();
+        const cost = currentUser.hasCustomHouseName ? 20 : 0;
+        if (currentUser.loc < cost) return notify("Không đủ Lộc!");
+        updateUser({ houseName: customName, hasCustomHouseName: true, loc: currentUser.loc - cost });
+        setShowRename(false); notify("Đổi tên biển nhà thành công!");
+      };
+
+      const handleDragStart = (e, item, isFromInventory, placedUid = null) => {
+        e.dataTransfer.setData("text/plain", item.id);
+        setDragItem({ ...item, isFromInventory, placedUid });
+      };
+
+      const handleDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add("drag-over"); };
+      const handleDragLeave = (e) => { e.currentTarget.classList.remove("drag-over"); };
+
+      const handleDrop = (e, areaName) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove("drag-over");
+        if (!dragItem) return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        // Calculate percentages to make it responsive
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        let newPlaced = [...currentUser.placedItems];
+        if (dragItem.isFromInventory) {
+          // Add new item
+          newPlaced.push({ uid: Date.now().toString(), shopId: dragItem.id, x, y, area: areaName });
+          // Remove from inventory
+          updateUser({
+            placedItems: newPlaced,
+            inventory: currentUser.inventory.filter((_, idx) => idx !== currentUser.inventory.indexOf(dragItem.id))
+          });
+        } else {
+          // Move existing item
+          const idx = newPlaced.findIndex(p => p.uid === dragItem.placedUid);
+          if (idx !== -1) {
+            newPlaced[idx] = { ...newPlaced[idx], x, y, area: areaName };
+            updateUser({ placedItems: newPlaced });
+          }
+        }
+        setDragItem(null);
+      };
+
+      const handleStoreItem = (placedUid, shopId) => {
+        updateUser({
+          placedItems: currentUser.placedItems.filter(p => p.uid !== placedUid),
+          inventory: [...currentUser.inventory, shopId]
+        });
+        notify("Đã cất vật phẩm vào kho");
+      };
+
+      return (
+        <div className="space-y-6">
+          {/* Header */}
+          <div className={`p-5 rounded-3xl border ${cardBg} flex justify-between items-center`}>
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">🏡</span>
+              <div>
+                <h2 className="text-xl font-black text-amber-700 dark:text-amber-400">[Biển Tên]: {currentUser.houseName}</h2>
+                <button onClick={() => setShowRename(true)} className="text-[10px] font-bold px-2 py-0.5 bg-amber-500/20 text-amber-700 rounded mt-1">✏️ Đổi tên {currentUser.hasCustomHouseName ? "(20🍀)" : "(Free)"}</button>
+              </div>
+            </div>
+            <p className="text-xs font-bold opacity-70">Chủ nhà: {currentUser.name}</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Inventory Sidebar */}
+            <div className={`p-4 rounded-3xl border ${cardBg} lg:col-span-1 h-96 overflow-y-auto space-y-3`}>
+              <h3 className="font-bold text-sm">Kho Đồ Của Bạn</h3>
+              <p className="text-[10px] opacity-70">Kéo vật phẩm thả vào Nhà hoặc Sân để trang trí.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {inventoryDetails.map((item, idx) => (
+                  <div key={idx} draggable onDragStart={(e) => handleDragStart(e, item, true)} className="p-2 border rounded-xl bg-black/5 flex flex-col items-center cursor-grab hover:bg-emerald-500/20">
+                    <span className="text-3xl">{item.icon}</span>
+                    <span className="text-[9px] font-bold text-center mt-1 truncate w-full">{item.name}</span>
+                  </div>
+                ))}
+                {inventoryDetails.length === 0 && <p className="text-[10px] col-span-2 text-center py-4 opacity-50">Kho trống. Hãy mua ở Cửa hàng!</p>}
+              </div>
+            </div>
+
+            {/* Decorating Canvas */}
+            <div className="lg:col-span-3 space-y-4">
+              {/* House Area */}
+              <div 
+                className="h-64 rounded-3xl border-2 border-dashed border-amber-900/20 bg-amber-900/5 relative overflow-hidden transition-colors"
+                onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, 'house')}
+              >
+                <div className="absolute top-2 left-4 text-xs font-bold opacity-50">Khu Vực Trong Nhà 🛋️</div>
+                {currentUser.placedItems.filter(p => p.area === 'house').map(p => {
+                  const item = db.shopItems.find(s => s.id === p.shopId);
+                  if (!item) return null;
+                  return (
+                    <div key={p.uid} draggable onDragStart={(e) => handleDragStart(e, item, false, p.uid)} onDoubleClick={() => handleStoreItem(p.uid, p.shopId)} className="absolute cursor-grab text-4xl hover:scale-110 transition-transform flex flex-col items-center" style={{ left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)' }} title="Nhấp đúp để cất đi">
+                      {item.image ? <img src={item.image} className="w-12 h-12 object-contain pointer-events-none" /> : <span>{item.icon}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Garden Area */}
+              <div 
+                className="h-64 rounded-3xl border-2 border-dashed border-emerald-900/20 bg-emerald-900/5 relative overflow-hidden transition-colors"
+                onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, 'garden')}
+              >
+                <div className="absolute top-2 left-4 text-xs font-bold opacity-50">Khu Vực Sân Vườn 🌿</div>
+                {currentUser.placedItems.filter(p => p.area === 'garden').map(p => {
+                  const item = db.shopItems.find(s => s.id === p.shopId);
+                  if (!item) return null;
+                  return (
+                    <div key={p.uid} draggable onDragStart={(e) => handleDragStart(e, item, false, p.uid)} onDoubleClick={() => handleStoreItem(p.uid, p.shopId)} className="absolute cursor-grab text-4xl hover:scale-110 transition-transform flex flex-col items-center" style={{ left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)' }} title="Nhấp đúp để cất đi">
+                      {item.image ? <img src={item.image} className="w-12 h-12 object-contain pointer-events-none" /> : <span>{item.icon}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-center opacity-60 italic">Nhấp đúp vào vật phẩm đang trang trí để cất lại vào kho.</p>
             </div>
           </div>
 
-          {/* ADMIN LOGIN */}
-          {showLoginModal && (
-            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-              <form className={`max-w-sm w-full p-8 rounded-3xl shadow-2xl border ${cardBg}`} onSubmit={(e) => {
-                e.preventDefault();
-                if (e.target.pwd.value === "bhnt2006") { setIsAdmin(true); setShowLoginModal(false); setActiveTab("admin"); notify("Mở khóa thành công!"); }
-                else notify("Sai mật khẩu!");
-              }}>
-                <h3 className="font-black text-lg text-center mb-4">🔐 Xác Thực Admin</h3>
-                <input name="pwd" type="password" placeholder="Mật khẩu..." className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-transparent mb-4 text-center font-mono tracking-widest" autoFocus />
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowLoginModal(false)} className="flex-1 py-3 rounded-xl hover:bg-black/10 font-bold text-sm">Hủy</button>
-                  <button type="submit" className="flex-1 py-3 bg-emerald-600 text-white rounded-xl shadow font-bold text-sm">Vào</button>
-                </div>
+          {showRename && (
+            <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+              <form onSubmit={handleRename} className={`p-6 rounded-2xl w-full max-w-sm border ${cardBg}`}>
+                <h3 className="font-bold mb-3">Đổi Tên Biển Nhà</h3>
+                <input value={customName} onChange={(e) => setCustomName(e.target.value)} required className="w-full p-2 text-sm rounded border bg-transparent mb-4" placeholder="VD: Hiên Nhà Gió Mát..." />
+                <div className="flex gap-2"><button type="button" onClick={()=>setShowRename(false)} className="flex-1 py-2 bg-black/10 rounded font-bold text-xs">Hủy</button><button type="submit" className="flex-1 py-2 bg-emerald-600 text-white rounded font-bold text-xs">Lưu Tên</button></div>
               </form>
             </div>
           )}
@@ -262,408 +607,266 @@
     }
 
     // ==========================================
-    // MODULE: HOUSE VIEW (KÉO THẢ ĐỒ ĐẠC)
+    // MODULE 3: 8 MINI-GAMES WITH DAILY LIMITS
     // ==========================================
-    function HouseView({ db, setDb, notify, cardBg }) {
-      const handleDragStart = (e, itemData, fromCanvas = false) => {
-        e.dataTransfer.setData("application/json", JSON.stringify({ itemData, fromCanvas }));
-      };
-
-      const handleDropCanvas = (e) => {
-        e.preventDefault();
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left - 25; // center offset
-        const y = e.clientY - rect.top - 25;
-        
-        try {
-          const data = JSON.parse(e.dataTransfer.getData("application/json"));
-          if (data.fromCanvas) {
-            // Move existing item
-            setDb(prev => {
-              const newLayout = prev.user.houseLayout.map(i => i.uniqueId === data.itemData.uniqueId ? { ...i, x, y } : i);
-              return { ...prev, user: { ...prev.user, houseLayout: newLayout } };
-            });
-          } else {
-            // Add new item from inventory
-            const newItem = { ...data.itemData, uniqueId: Date.now().toString(), x, y };
-            setDb(prev => ({ ...prev, user: { ...prev.user, houseLayout: [...prev.user.houseLayout, newItem] } }));
-          }
-        } catch (err) {}
-      };
-
-      const removeFromCanvas = (uniqueId) => {
-        setDb(prev => ({ ...prev, user: { ...prev.user, houseLayout: prev.user.houseLayout.filter(i => i.uniqueId !== uniqueId) } }));
-      };
-
-      // Create full inventory list from shop DB
-      const inventory = db.user.houseItems.map(itemId => db.shopItems.find(s => s.id === itemId)).filter(Boolean);
-
-      return (
-        <div className="space-y-6">
-          <div className={`p-6 rounded-3xl border ${cardBg}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-black">🏡 {db.user.houseName || "Căn Nhà Nhỏ"}</h2>
-              <span className="text-xs opacity-70 italic">Kéo thả đồ từ túi đồ vào nhà để trang trí</span>
-            </div>
-
-            {/* CANVAS NHÀ */}
-            <div 
-              className="w-full h-[60vh] md:h-[500px] house-canvas rounded-2xl shadow-inner border border-slate-300 dark:border-slate-700 overflow-hidden relative"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDropCanvas}
-            >
-              <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
-              {db.user.houseLayout.map(item => (
-                <div
-                  key={item.uniqueId}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, item, true)}
-                  onDoubleClick={() => removeFromCanvas(item.uniqueId)}
-                  className="absolute text-5xl cursor-grab active:cursor-grabbing hover:scale-110 transition-transform drop-shadow-xl"
-                  style={{ left: item.x, top: item.y }}
-                  title="Kéo để di chuyển, click đúp để cất"
-                >
-                  {item.icon}
-                </div>
-              ))}
-              {db.user.houseLayout.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center text-white/50 text-sm font-bold pointer-events-none">
-                  Kéo thả đồ đạc vào đây...
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* INVENTORY TÚI ĐỒ */}
-          <div className={`p-6 rounded-3xl border ${cardBg}`}>
-            <h3 className="font-bold mb-4 text-sm">🎒 Túi Đồ Của Tôi</h3>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {inventory.map((item, idx) => (
-                <div
-                  key={idx}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, item, false)}
-                  className="w-20 h-20 shrink-0 bg-black/5 dark:bg-white/5 rounded-2xl border border-dashed border-slate-400 flex flex-col items-center justify-center cursor-grab hover:bg-black/10"
-                  title="Kéo thả vào nhà"
-                >
-                  <span className="text-3xl">{item.icon}</span>
-                  <span className="text-[10px] font-bold mt-1 text-center line-clamp-1 w-full px-1">{item.name}</span>
-                </div>
-              ))}
-              {inventory.length === 0 && <p className="text-xs opacity-60">Túi đồ rỗng. Hãy mua thêm đồ ở Cửa Hàng!</p>}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // ==========================================
-    // MODULE: ROOMS VIEW
-    // ==========================================
-    function RoomsView({ db, setDb, notify, cardBg, isDark }) {
-      const pinnedRooms = useMemo(() => db.rooms.filter(r => r.pinRank > 0 && !r.isCompleted).sort((a,b)=>a.pinRank-b.pinRank), [db.rooms]);
-      const otherRooms = useMemo(() => {
-        const un = db.rooms.filter(r => r.pinRank === 0 && !r.isCompleted).sort((a,b)=>b.createdAt-a.createdAt);
-        const done = db.rooms.filter(r => r.isCompleted).sort((a,b)=>b.votes-a.votes);
-        return [...un, ...done]; // Xếp phòng hoàn thành xuống cuối
-      }, [db.rooms]);
-
-      return (
-        <div className="space-y-8">
-          <div className={`p-8 rounded-3xl border ${cardBg} text-center`}>
-            <span className="text-3xl">🌸 🍃 🏡</span>
-            <h2 className="text-2xl font-extrabold mt-2">Các Căn Phòng Quán Trọ</h2>
-          </div>
-          {pinnedRooms.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg">📌 Bảng Ghim</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {pinnedRooms.map(r => <RoomCard key={r.id} room={r} db={db} setDb={setDb} notify={notify} cardBg={cardBg} />)}
-              </div>
-            </div>
-          )}
-          <div className="space-y-4 pt-4 border-t border-black/5">
-            <h3 className="font-bold text-lg">🚪 Tất Cả Phòng Nghỉ</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {otherRooms.map(r => <RoomCard key={r.id} room={r} db={db} setDb={setDb} notify={notify} cardBg={cardBg} />)}
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
-    function RoomCard({ room, db, setDb, notify, cardBg }) {
-      return (
-        <div className={`rounded-2xl overflow-hidden border ${cardBg} hover:-translate-y-1 transition-transform relative flex flex-col`}>
-          {room.pinRank > 0 && <div className="absolute top-2 left-2 z-10 px-2.5 py-1 bg-amber-500 text-white text-[10px] font-bold rounded-full">⭐ Top {room.pinRank}</div>}
-          {room.isCompleted && <div className="absolute top-2 right-2 z-10 px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full">✓ Hoàn Thành</div>}
-          <div className="h-40 relative bg-slate-200 dark:bg-slate-800">
-            <img src={room.image} className="w-full h-full object-cover" alt="" />
-          </div>
-          <div className="p-4 flex-1 flex flex-col gap-2">
-            <h4 className="font-bold text-sm">{room.name}</h4>
-            <p className="text-xs opacity-75"><strong>Ý tưởng:</strong> {room.idea}</p>
-            <div className="flex-1"></div>
-            <div className="flex justify-between items-center pt-2 border-t border-black/5">
-              <span className="text-xs font-bold opacity-80">👀 {room.votes}</span>
-              {room.isCompleted ? (
-                <a href={room.link} target="_blank" className="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg shadow">Ghé →</a>
-              ) : (
-                <button onClick={()=>{ setDb(p=>({...p, rooms: p.rooms.map(x=>x.id===room.id?{...x,votes:x.votes+1}:x)})); notify("Đã hóng!"); }} className="px-3 py-1 bg-sky-600 text-white text-xs font-bold rounded-lg shadow">🐾 Hóng</button>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // ==========================================
-    // MODULE: MINI GAMES
-    // ==========================================
-    function MiniGamesView({ db, setDb, addLoc, notify, cardBg, fileToBase64 }) {
+    function MiniGamesView({ db, setDb, currentUser, addLoc, checkLimit, useLimit, notify, cardBg }) {
       const [currentGame, setCurrentGame] = useState(1);
-      const { daily } = db.user;
       const games = [
-        { id: 1, name: "Chăm Vườn", icon: "🌱", d: daily.water },
-        { id: 2, name: "Câu Cá", icon: "🎣", d: daily.fish },
-        { id: 3, name: "Vườn Sao", icon: "🌙", d: daily.star },
-        { id: 4, name: "Nhật Ký", icon: "📖", d: daily.diary },
-        { id: 5, name: "Nối Truyện", icon: "📜", d: daily.story },
-        { id: 6, name: "Câu Đố", icon: "🧩", d: daily.quiz },
-        { id: 7, name: "Pha Trà", icon: "🍵", d: daily.tea }
+        { id: 1, name: "Chăm Vườn", icon: "🌱" }, { id: 2, name: "Câu Cá", icon: "🎣" },
+        { id: 3, name: "Vườn Sao", icon: "🌙" }, { id: 4, name: "Nhật Ký", icon: "📖" },
+        { id: 5, name: "Truyện Nối Tiếp", icon: "📜" }, { id: 6, name: "Câu Đố", icon: "🧩" },
+        { id: 7, name: "Pha Trà", icon: "🍵" } // Game 8 là nhặt vật phẩm rơi tự do (đã code ở Header/App)
       ];
 
       return (
-        <div className="space-y-6">
-          <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="space-y-4">
+          <div className="flex overflow-x-auto gap-2 pb-2">
             {games.map(g => (
-              <button key={g.id} onClick={() => setCurrentGame(g.id)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex gap-2 border ${currentGame === g.id ? "bg-emerald-600 text-white" : `${cardBg}`} ${g.d >= 1 ? "opacity-50 line-through" : ""}`}>
-                <span>{g.icon}</span> <span>{g.name}</span>
-              </button>
+              <button key={g.id} onClick={() => setCurrentGame(g.id)} className={`px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap border ${currentGame === g.id ? 'bg-emerald-600 text-white' : `${cardBg} opacity-80`}`}>{g.icon} {g.name}</button>
             ))}
           </div>
           <div className={`p-6 rounded-3xl border ${cardBg}`}>
-            {currentGame === 1 && <Game1 db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
-            {currentGame === 2 && <Game2 db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
-            {currentGame === 3 && <Game3 db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
-            {currentGame === 4 && <Game4 db={db} setDb={setDb} addLoc={addLoc} notify={notify} fileToBase64={fileToBase64} />}
-            {currentGame === 5 && <Game5 db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
-            {currentGame === 6 && <Game6 db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
-            {currentGame === 7 && <Game7 db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
+            {currentGame === 1 && <GameGeneric title="🌱 Khu Vườn Thảo Mộc" desc="Mỗi ngày bạn được tưới nước 1 lần." action="Tưới Nước (+25 🍀)" limitKey="water" reward={25} checkLimit={checkLimit} useLimit={useLimit} addLoc={addLoc} currentUser={currentUser} display="🌱 Mầm xanh đang lớn..." />}
+            {currentGame === 2 && <GameGeneric title="🎣 Câu Cá Bên Suối" desc="Mỗi ngày thả câu 1 lần xem được cá gì nào!" action="Thả Câu" limitKey="fish" reward={15} checkLimit={checkLimit} useLimit={useLimit} addLoc={addLoc} currentUser={currentUser} display="🌊 Róc rách róc rách..." isGacha />}
+            {currentGame === 3 && <GameGeneric title="🌙 Đặt Tên Chòm Sao" desc="Mỗi đêm, bầu trời sẽ tặng bạn 1 chòm sao để đặt tên." action="Đặt Tên Sao (+20 🍀)" limitKey="star" reward={20} checkLimit={checkLimit} useLimit={useLimit} addLoc={addLoc} currentUser={currentUser} display="✨ Bầu trời đầy sao chờ bạn..." />}
+            
+            {/* Các game có input text/logic đặc thù */}
+            {currentGame === 4 && <DiaryGame currentUser={currentUser} checkLimit={checkLimit} useLimit={useLimit} addLoc={addLoc} db={db} setDb={setDb} notify={notify} />}
+            {currentGame === 5 && <StoryGame currentUser={currentUser} checkLimit={checkLimit} useLimit={useLimit} addLoc={addLoc} db={db} setDb={setDb} notify={notify} />}
+            {currentGame === 6 && <QuizGame currentUser={currentUser} checkLimit={checkLimit} useLimit={useLimit} addLoc={addLoc} db={db} notify={notify} />}
+            {currentGame === 7 && <GameGeneric title="🍵 Góc Pha Trà" desc="Pha 1 bình trà thảo mộc mỗi ngày." action="Pha Trà (+20 🍀)" limitKey="tea" reward={20} checkLimit={checkLimit} useLimit={useLimit} addLoc={addLoc} currentUser={currentUser} display="🫖 Đang đun nước..." />}
           </div>
         </div>
       );
     }
-    
-    // Components Mini Games (Giữ nguyên logic giới hạn 1 lượt/ngày)
-    function GameVisual({ img, emj }) { return img ? <img src={img} className="w-full h-40 object-cover rounded-2xl mb-4" /> : <span className="text-7xl block mb-4 text-center">{emj}</span>; }
-    
-    function Game1({ db, setDb, addLoc, notify }) {
+
+    // Generic Component for simple 1-click games to save space
+    function GameGeneric({ title, desc, action, limitKey, reward, checkLimit, useLimit, addLoc, currentUser, display, isGacha }) {
+      const isPlayed = currentUser?.dailyLimits?.[limitKey] >= 1;
+      const handlePlay = () => {
+        if (!checkLimit(limitKey)) return;
+        useLimit(limitKey);
+        if (isGacha) {
+          const fishes = ["Cá Bảy Màu (Thường) 🐟", "Cá Chép Vàng (Hiếm) 🐠", "Cá Thần Suối Băng ✨"];
+          const caught = fishes[Math.floor(Math.random() * fishes.length)];
+          addLoc(reward, `Câu được ${caught}`);
+        } else {
+          addLoc(reward, `Tham gia ${title}`);
+        }
+      };
       return (
-        <div className="text-center max-w-md mx-auto">
-          <h3 className="font-bold mb-4">🌱 Chăm Vườn</h3>
-          <GameVisual img={db.settings.gameImages.garden} emj="🌸" />
-          <button onClick={()=>{ if(db.user.daily.water>=1) return notify("Mai tưới tiếp nhé!"); setDb(p=>({...p, user: {...p.user, daily: {...p.user.daily, water:1}}})); addLoc(db.settings.rewards.water, "Tưới nước"); }} className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-xl">Tưới Nước 💧</button>
+        <div className="text-center space-y-4 max-w-sm mx-auto py-4">
+          <h3 className="font-bold text-lg">{title}</h3>
+          <p className="text-xs opacity-75">{desc}</p>
+          <div className="h-24 bg-black/5 dark:bg-white/5 rounded-xl flex items-center justify-center font-bold">{display}</div>
+          <button onClick={handlePlay} disabled={isPlayed} className={`px-6 py-2.5 rounded-2xl text-xs font-bold shadow ${isPlayed ? 'bg-slate-400 text-slate-200 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95'}`}>
+            {isPlayed ? "Đã dùng lượt hôm nay" : action}
+          </button>
         </div>
       );
     }
-    function Game2({ db, setDb, addLoc, notify }) {
+
+    function DiaryGame({ currentUser, checkLimit, useLimit, addLoc, db, setDb, notify }) {
+      const [input, setInput] = useState("");
+      const isPlayed = currentUser?.dailyLimits?.diary >= 1;
+      const submit = (e) => {
+        e.preventDefault();
+        if (!checkLimit("diary")) return;
+        if (!input.trim()) return;
+        const newEntry = { id: Date.now(), author: currentUser.name, text: input.trim() };
+        setDb(prev => ({ ...prev, users: prev.users.map(u => u.id === currentUser.id ? {...u, diaryEntries: [newEntry, ...u.diaryEntries]} : u) }));
+        useLimit("diary"); addLoc(15, "Viết nhật ký"); setInput("");
+      };
       return (
-        <div className="text-center max-w-md mx-auto">
-          <h3 className="font-bold mb-4">🎣 Câu Cá</h3>
-          <GameVisual img={db.settings.gameImages.fishing} emj="🐟" />
-          <button onClick={()=>{ if(db.user.daily.fish>=1) return notify("Mai câu tiếp nhé!"); setDb(p=>({...p, user: {...p.user, daily: {...p.user.daily, fish:1}}})); addLoc(db.settings.rewards.fishCommon, "Câu cá"); }} className="px-6 py-2 bg-sky-600 text-white font-bold rounded-xl">Thả Cần 🎣</button>
+        <div className="max-w-md mx-auto space-y-4 text-center">
+          <h3 className="font-bold text-lg">📖 Nhật Ký Nhà Trọ</h3>
+          <p className="text-xs">Viết 1 dòng nhật ký mỗi ngày (Công khai).</p>
+          <form onSubmit={submit} className="flex gap-2">
+            <input value={input} onChange={e=>setInput(e.target.value)} disabled={isPlayed} placeholder="Hôm nay bạn thế nào?" className="flex-1 p-2 text-xs border rounded-xl bg-transparent" />
+            <button type="submit" disabled={isPlayed} className={`px-4 text-xs font-bold rounded-xl ${isPlayed?'bg-slate-400 text-white':'bg-emerald-600 text-white'}`}>{isPlayed?"Xong":"Lưu"}</button>
+          </form>
         </div>
       );
     }
-    function Game3({ db, setDb, addLoc, notify }) {
+
+    function StoryGame({ currentUser, checkLimit, useLimit, addLoc, db, setDb, notify }) {
+      const [input, setInput] = useState("");
+      const isPlayed = currentUser?.dailyLimits?.story >= 1;
+      // Get all stories from all users for community feel
+      const allStories = db.users.flatMap(u => u.storyChapters || []).sort((a,b) => b.id - a.id).slice(0, 5);
+      const submit = (e) => {
+        e.preventDefault();
+        if (!checkLimit("story") || !input.trim()) return;
+        const newChap = { id: Date.now(), author: currentUser.name, text: input.trim() };
+        setDb(prev => ({ ...prev, users: prev.users.map(u => u.id === currentUser.id ? {...u, storyChapters: [newChap, ...(u.storyChapters||[])]} : u) }));
+        useLimit("story"); addLoc(15, "Viết truyện"); setInput("");
+      };
       return (
-        <div className="text-center max-w-md mx-auto">
-          <h3 className="font-bold mb-4">🌙 Vườn Sao</h3>
-          <GameVisual img={db.settings.gameImages.star} emj="✨" />
-          <button onClick={()=>{ if(db.user.daily.star>=1) return notify("Đủ sao hôm nay rồi!"); setDb(p=>({...p, user: {...p.user, daily: {...p.user.daily, star:1}}})); addLoc(db.settings.rewards.star, "Tạo sao"); }} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl">Lưu Chòm Sao ✨</button>
+        <div className="max-w-md mx-auto space-y-4 text-center">
+          <h3 className="font-bold text-lg">📜 Truyện Nối Tiếp</h3>
+          <div className="h-32 p-3 bg-black/5 overflow-y-auto text-left text-xs space-y-1 rounded-xl">
+            {allStories.map(s => <p key={s.id}><b>[{s.author}]:</b> {s.text}</p>)}
+          </div>
+          <form onSubmit={submit} className="flex gap-2">
+            <input value={input} onChange={e=>setInput(e.target.value)} disabled={isPlayed} placeholder="Tiếp tục câu chuyện..." className="flex-1 p-2 text-xs border rounded-xl bg-transparent" />
+            <button type="submit" disabled={isPlayed} className={`px-4 text-xs font-bold rounded-xl ${isPlayed?'bg-slate-400 text-white':'bg-emerald-600 text-white'}`}>Viết</button>
+          </form>
         </div>
       );
     }
-    function Game4({ db, setDb, addLoc, notify, fileToBase64 }) {
-      const [txt, setTxt] = useState("");
-      const [imgB64, setImgB64] = useState("");
+
+    function QuizGame({ currentUser, checkLimit, useLimit, addLoc, db, notify }) {
+      const isPlayed = currentUser?.dailyLimits?.quiz >= 1;
+      // Daily random quiz logic based on date
+      const todayNum = new Date().getDate();
+      const quiz = db.quizzes.length > 0 ? db.quizzes[todayNum % db.quizzes.length] : { q: "Chưa có câu hỏi", options: [], ansIdx: -1 };
+
+      const answer = (idx) => {
+        if (!checkLimit("quiz")) return;
+        useLimit("quiz");
+        if (idx === quiz.ansIdx) { addLoc(20, "Trả lời đúng câu đố!"); } 
+        else { notify("Sai rồi, hẹn ngày mai nhé!"); }
+      };
+
       return (
-        <div className="max-w-xl mx-auto">
-          <h3 className="font-bold text-center mb-4">📖 Nhật Ký</h3>
-          <textarea value={txt} onChange={e=>setTxt(e.target.value)} placeholder="Tâm sự đôi lời..." className="w-full p-3 rounded-xl border bg-transparent mb-2" />
-          <input type="file" accept="image/*" onChange={(e)=>fileToBase64(e.target.files[0], setImgB64)} className="text-xs mb-3" />
-          {imgB64 && <img src={imgB64} className="h-20 rounded-lg mb-2" />}
-          <button onClick={()=>{ 
-            if(db.user.daily.diary>=1) return notify("Đã viết hôm nay!"); 
-            if(!txt) return notify("Hãy viết gì đó!");
-            setDb(p=>({...p, user: {...p.user, daily: {...p.user.daily, diary:1}, diaryEntries: [{id:Date.now(), text:txt, img:imgB64, author:p.user.name}, ...p.user.diaryEntries]}}));
-            addLoc(db.settings.rewards.diary, "Viết nhật ký"); setTxt(""); setImgB64("");
-          }} className="w-full py-2 bg-emerald-600 text-white font-bold rounded-xl">Lưu 🍃</button>
-          
-          <div className="mt-4 space-y-2 h-40 overflow-y-auto">
-            {db.user.diaryEntries.map(e => (
-              <div key={e.id} className="p-3 bg-black/5 dark:bg-white/5 rounded-xl">
-                <p className="font-bold text-xs">{e.author}</p>
-                <p className="text-xs">{e.text}</p>
-                {e.img && <img src={e.img} className="mt-2 h-24 rounded-lg object-cover" />}
+        <div className="max-w-md mx-auto space-y-4 text-center">
+          <h3 className="font-bold text-lg">🧩 Câu Đố Mỗi Ngày</h3>
+          <p className="text-xs font-bold text-emerald-700 dark:text-indigo-300">"{quiz.q}"</p>
+          <div className="grid grid-cols-2 gap-2">
+            {quiz.options.map((opt, idx) => (
+              <button key={idx} disabled={isPlayed} onClick={() => answer(idx)} className={`p-2 text-xs font-bold rounded-xl border ${isPlayed?'bg-slate-200 text-slate-500':'hover:bg-emerald-100 dark:hover:bg-slate-800'}`}>{opt}</button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+
+    // ==========================================
+    // MODULE 4: SHOP 
+    // ==========================================
+    function ShopView({ db, currentUser, updateUser, notify, cardBg }) {
+      const categories = ["Tất cả", "Nội thất", "Sân vườn", "Cây cối", "Thú cưng", "Hiệu ứng"];
+      const [cat, setCat] = useState("Tất cả");
+
+      const buy = (item) => {
+        if (!currentUser) return notify("Vui lòng đăng nhập!");
+        if (currentUser.loc < item.price) return notify("Không đủ Lộc!");
+        updateUser({ loc: currentUser.loc - item.price, inventory: [...currentUser.inventory, item.id] });
+        notify(`Đã mua ${item.name}! Xem trong kho nhà riêng.`);
+      };
+
+      const filtered = cat === "Tất cả" ? db.shopItems : db.shopItems.filter(i => i.category === cat);
+      return (
+        <div className="space-y-6">
+          <div className={`p-6 rounded-3xl border ${cardBg} flex justify-between items-center`}><h2 className="text-xl font-black">🛍️ Cửa Hàng</h2><div className="font-bold text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">🍀 {currentUser?.loc || 0}</div></div>
+          <div className="flex gap-2 overflow-x-auto pb-2">{categories.map(c => <button key={c} onClick={()=>setCat(c)} className={`px-4 py-1.5 rounded-xl text-xs font-bold ${cat===c?'bg-emerald-600 text-white':'bg-black/5'}`}>{c}</button>)}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {filtered.map(item => (
+              <div key={item.id} className={`p-4 rounded-2xl border ${cardBg} text-center space-y-2 flex flex-col items-center justify-between`}>
+                {item.image ? <img src={item.image} className="w-16 h-16 object-contain" /> : <span className="text-4xl">{item.icon}</span>}
+                <div><h4 className="font-bold text-xs">{item.name}</h4><p className="text-[10px] opacity-60">{item.category}</p></div>
+                <button onClick={()=>buy(item)} className="w-full py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-400">🍀 {item.price}</button>
               </div>
             ))}
           </div>
         </div>
       );
     }
-    function Game5({ db, setDb, addLoc, notify }) {
-      const [txt, setTxt] = useState("");
+
+    // ==========================================
+    // MODULE 5: ADMIN FULL CRUD
+    // ==========================================
+    function AdminView({ db, setDb, notify, cardBg }) {
+      const [tab, setTab] = useState("rooms");
+
+      // CRUD Helpers generic
+      const handleAdd = (e, key, newItemCreator) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        setDb(prev => ({ ...prev, [key]: [newItemCreator(fd), ...prev[key]] }));
+        e.target.reset(); notify("Thêm thành công!");
+      };
+      const handleDelete = (id, key) => { setDb(prev => ({ ...prev, [key]: prev[key].filter(x => x.id !== id) })); notify("Xóa thành công!"); };
+
       return (
-        <div className="max-w-xl mx-auto">
-          <h3 className="font-bold text-center mb-4">📜 Nối Truyện</h3>
-          <div className="h-40 overflow-y-auto text-xs bg-black/5 p-3 rounded-xl mb-2">
-            {db.user.storyChapters.map(c => <p key={c.id}><b>[{c.author}]</b>: {c.text}</p>)}
-          </div>
-          <div className="flex gap-2">
-            <input value={txt} onChange={e=>setTxt(e.target.value)} className="flex-1 p-2 rounded-xl border bg-transparent text-xs" placeholder="Viết tiếp..." />
-            <button onClick={()=>{
-               if(db.user.daily.story>=1) return notify("Mai nối tiếp nhé!");
-               if(!txt) return;
-               setDb(p=>({...p, user: {...p.user, daily: {...p.user.daily, story:1}, storyChapters: [...p.user.storyChapters, {id:Date.now(), author: p.user.name, text: txt}]}}));
-               addLoc(db.settings.rewards.story, "Nối truyện"); setTxt("");
-            }} className="px-4 py-2 bg-amber-600 text-white font-bold rounded-xl text-xs">Viết ✍️</button>
-          </div>
-        </div>
-      );
-    }
-    function Game6({ db, setDb, addLoc, notify }) {
-      const q = db.quizzes[new Date().getDate() % (db.quizzes.length||1)];
-      return (
-        <div className="text-center max-w-md mx-auto">
-          <h3 className="font-bold mb-4">🧩 Câu Đố</h3>
-          {q ? <>
-            <p className="font-bold text-sm mb-4">Q: {q.question || q.title}</p>
-            <div className="grid grid-cols-2 gap-2">
-              {q.options.map((opt, i) => (
-                <button key={i} onClick={()=>{
-                  if(db.user.daily.quiz>=1) return notify("Mai chơi tiếp!");
-                  setDb(p=>({...p, user: {...p.user, daily: {...p.user.daily, quiz:1}}}));
-                  if(i === q.correctIndex) addLoc(db.settings.rewards.quiz, "Đúng!"); else notify("Sai rồi!");
-                }} className="p-2 border rounded-xl text-xs hover:bg-black/5">{opt}</button>
+        <div className="space-y-6">
+          <div className={`p-6 rounded-3xl border ${cardBg} flex justify-between items-center`}>
+            <h2 className="text-xl font-black">⚙️ Quản Trị Toàn Quyền</h2>
+            <div className="flex gap-1">
+              {["rooms", "music", "shop", "quiz"].map(t => (
+                <button key={t} onClick={()=>setTab(t)} className={`px-3 py-1 rounded text-xs font-bold ${tab===t?'bg-emerald-600 text-white':'bg-black/5'}`}>{t.toUpperCase()}</button>
               ))}
             </div>
-          </> : <p>Chưa có câu đố</p>}
-        </div>
-      );
-    }
-    function Game7({ db, setDb, addLoc, notify }) {
-      return (
-        <div className="text-center max-w-md mx-auto">
-          <h3 className="font-bold mb-4">🍵 Pha Trà</h3>
-          <GameVisual img={db.settings.gameImages.tea} emj="🫖" />
-          <button onClick={()=>{ if(db.user.daily.tea>=1) return notify("Mai pha tiếp!"); setDb(p=>({...p, user: {...p.user, daily: {...p.user.daily, tea:1}}})); addLoc(db.settings.rewards.tea, "Pha trà"); }} className="px-6 py-2 bg-amber-700 text-white font-bold rounded-xl">Ủ Trà</button>
-        </div>
-      );
-    }
-
-    // ==========================================
-    // MODULE: SHOP
-    // ==========================================
-    function ShopView({ db, setDb, notify, cardBg }) {
-      const buy = (item) => {
-        if(db.user.loc < item.price) return notify("Không đủ Lộc!");
-        setDb(p => ({...p, user: {...p.user, loc: p.user.loc - item.price, houseItems: [...p.user.houseItems, item.id]}}));
-        notify(`Đã mua ${item.name} và cất vào Túi Đồ!`);
-      };
-      return (
-        <div className={`p-6 rounded-3xl border ${cardBg}`}>
-          <h2 className="text-xl font-black mb-4">🛍️ Cửa Hàng (Số dư: 🍀 {db.user.loc})</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {db.shopItems.map(i => (
-              <div key={i.id} className="p-4 border border-black/10 rounded-xl text-center">
-                <span className="text-4xl block mb-2">{i.icon}</span>
-                <p className="font-bold text-xs">{i.name}</p>
-                <button onClick={()=>buy(i)} className="mt-2 w-full py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg shadow">Mua {i.price}🍀</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // ==========================================
-    // MODULE: ADMIN (TẤT CẢ TẢI ẢNH BẰNG FILE -> BASE64)
-    // ==========================================
-    function AdminView({ db, setDb, notify, cardBg, fileToBase64 }) {
-      const [tab, setTab] = useState("rooms");
-      
-      // STATE PHÒNG
-      const [rName, setRName] = useState(""); const [rImgB64, setRImgB64] = useState(""); const [rDone, setRDone] = useState(false); const [rLink, setRLink] = useState(""); const [rPin, setRPin] = useState(0);
-
-      const addRoom = (e) => {
-        e.preventDefault();
-        if(rDone && !rLink) return notify("Phòng đã hoàn thành phải nhập link!");
-        setDb(p => ({...p, rooms: [...p.rooms, { id: Date.now(), name: rName, image: rImgB64, tags: [], note: "", idea: "", isCompleted: rDone, link: rLink, pinRank: Number(rPin), votes: 0, createdAt: Date.now() }]}));
-        notify("Thêm phòng thành công!"); setRName(""); setRImgB64("");
-      };
-
-      // CONFIG ẢNH GAME
-      const handleGameImgUpload = (key, file) => {
-        fileToBase64(file, (b64) => {
-          setDb(p => ({...p, settings: {...p.settings, gameImages: {...p.settings.gameImages, [key]: b64}}}));
-          notify("Cập nhật ảnh game thành công!");
-        });
-      };
-
-      return (
-        <div className="space-y-6">
-          <div className={`p-4 rounded-3xl border ${cardBg} flex gap-2`}>
-            <button onClick={()=>setTab('rooms')} className={`px-4 py-2 font-bold rounded-xl text-xs ${tab==='rooms'?'bg-rose-600 text-white':'bg-black/5'}`}>Phòng</button>
-            <button onClick={()=>setTab('config')} className={`px-4 py-2 font-bold rounded-xl text-xs ${tab==='config'?'bg-rose-600 text-white':'bg-black/5'}`}>Cấu Hình Ảnh Game</button>
           </div>
 
-          <div className={`p-6 rounded-3xl border ${cardBg}`}>
-            {tab === "rooms" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <form onSubmit={addRoom} className="space-y-3">
-                  <h3 className="font-bold">Thêm Phòng (Upload Ảnh File)</h3>
-                  <input value={rName} onChange={e=>setRName(e.target.value)} placeholder="Tên phòng" required className="w-full p-2 border rounded bg-transparent text-sm" />
-                  <input type="file" accept="image/*" onChange={(e)=>fileToBase64(e.target.files[0], setRImgB64)} required className="w-full p-2 border rounded bg-transparent text-sm" />
-                  {rImgB64 && <img src={rImgB64} className="h-20 rounded" />}
-                  <div className="flex gap-2">
-                    <select value={rPin} onChange={e=>setRPin(e.target.value)} className="w-1/2 p-2 border rounded bg-transparent">
-                      <option value={0}>Không ghim</option><option value={1}>Top 1</option>
-                    </select>
-                    <label className="flex items-center gap-1 font-bold text-xs"><input type="checkbox" checked={rDone} onChange={e=>setRDone(e.target.checked)} />Đã hoàn thành</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Form Column */}
+            <div className={`p-5 rounded-3xl border ${cardBg}`}>
+              <h3 className="font-bold mb-4">Thêm Dữ Liệu ({tab})</h3>
+              
+              {tab === "rooms" && (
+                <form onSubmit={(e) => handleAdd(e, "rooms", (fd) => ({ id: Date.now(), name: fd.get("name"), image: fd.get("image")||"https://picsum.photos/400", tags: fd.get("tags").split(","), note: fd.get("note"), idea: fd.get("idea"), isCompleted: fd.get("completed")==='on', link: fd.get("link"), pinRank: Number(fd.get("pin")), votes:0, createdAt:Date.now() }))} className="space-y-3">
+                  <input name="name" required placeholder="Tên phòng" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="image" placeholder="URL Ảnh" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="tags" placeholder="Tags (cách nhau bằng phẩy)" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="note" placeholder="Ghi chú" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <textarea name="idea" placeholder="Ý tưởng" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <div className="flex gap-2 items-center">
+                    <select name="pin" className="flex-1 p-2 text-xs border rounded bg-transparent"><option value="0">Không ghim</option><option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option></select>
+                    <label className="text-xs font-bold"><input type="checkbox" name="completed" /> Xong</label>
                   </div>
-                  {rDone && <input value={rLink} onChange={e=>setRLink(e.target.value)} placeholder="Link dẫn tới phòng *" required className="w-full p-2 border border-emerald-500 rounded bg-transparent" />}
-                  <button type="submit" className="w-full py-2 bg-rose-600 text-white font-bold rounded">Thêm Phòng</button>
+                  <input name="link" placeholder="Link web phòng (nếu Xong)" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <button className="w-full py-2 bg-emerald-600 text-white font-bold rounded">Thêm Phòng</button>
                 </form>
-                <div className="max-h-80 overflow-y-auto space-y-2">
-                  {db.rooms.map(r => (
-                    <div key={r.id} className="p-3 border rounded flex justify-between">
-                      <div>
-                        <p className="font-bold text-sm">{r.name}</p>
-                        {r.image && <img src={r.image} className="w-12 h-12 object-cover rounded mt-1" />}
-                      </div>
-                      <button onClick={()=>setDb(p=>({...p, rooms: p.rooms.filter(x=>x.id!==r.id)}))} className="text-rose-600 font-bold text-xs">Xóa</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {tab === "config" && (
-              <div className="space-y-4">
-                <h3 className="font-bold border-b pb-2">Tải Ảnh Game Từ Máy (File .jpg, .png)</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {["garden", "fishing", "star", "diary", "story", "quiz", "tea"].map(k => (
-                    <div key={k} className="flex flex-col gap-2 p-3 border rounded-xl">
-                      <span className="font-bold text-xs uppercase">{k}</span>
-                      <input type="file" accept="image/*" onChange={(e)=>handleGameImgUpload(k, e.target.files[0])} className="text-xs" />
-                      {db.settings.gameImages[k] && <img src={db.settings.gameImages[k]} className="h-16 object-cover rounded shadow" />}
-                    </div>
-                  ))}
+              {tab === "music" && (
+                <form onSubmit={(e) => handleAdd(e, "songs", (fd) => ({ id: Date.now(), title: fd.get("title"), artist: fd.get("artist"), url: fd.get("url") }))} className="space-y-3">
+                  <input name="title" required placeholder="Tên bài" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="artist" placeholder="Ca sĩ" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="url" required placeholder="Link MP3" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <button className="w-full py-2 bg-emerald-600 text-white font-bold rounded">Thêm Nhạc</button>
+                </form>
+              )}
+
+              {tab === "shop" && (
+                <form onSubmit={(e) => handleAdd(e, "shopItems", (fd) => ({ id: 'item_'+Date.now(), name: fd.get("name"), category: fd.get("cat"), price: Number(fd.get("price")), icon: fd.get("icon"), image: fd.get("img") }))} className="space-y-3">
+                  <input name="name" required placeholder="Tên đồ vật" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <select name="cat" className="w-full p-2 text-xs border rounded bg-transparent"><option>Nội thất</option><option>Sân vườn</option><option>Cây cối</option><option>Thú cưng</option><option>Hiệu ứng</option></select>
+                  <input name="price" type="number" required placeholder="Giá (Lộc)" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="icon" placeholder="Emoji / Icon" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="img" placeholder="Link ảnh đồ vật (Tùy chọn)" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <button className="w-full py-2 bg-emerald-600 text-white font-bold rounded">Thêm Đồ Shop</button>
+                </form>
+              )}
+
+              {tab === "quiz" && (
+                <form onSubmit={(e) => handleAdd(e, "quizzes", (fd) => ({ id: Date.now(), q: fd.get("q"), options: [fd.get("o1"), fd.get("o2"), fd.get("o3"), fd.get("o4")], ansIdx: Number(fd.get("ans")) }))} className="space-y-3">
+                  <input name="q" required placeholder="Câu hỏi?" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="o1" required placeholder="Đáp án 0" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="o2" required placeholder="Đáp án 1" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="o3" required placeholder="Đáp án 2" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <input name="o4" required placeholder="Đáp án 3" className="w-full p-2 text-xs border rounded bg-transparent" />
+                  <select name="ans" className="w-full p-2 text-xs border rounded bg-transparent"><option value="0">Đáp án đúng: 0</option><option value="1">Đúng: 1</option><option value="2">Đúng: 2</option><option value="3">Đúng: 3</option></select>
+                  <button className="w-full py-2 bg-emerald-600 text-white font-bold rounded">Thêm Câu Hỏi</button>
+                </form>
+              )}
+            </div>
+
+            {/* List Column */}
+            <div className={`md:col-span-2 p-5 rounded-3xl border ${cardBg} overflow-y-auto max-h-[600px] space-y-2`}>
+              <h3 className="font-bold">Danh Sách Hiện Tại</h3>
+              {db[tab === 'quiz' ? 'quizzes' : (tab === 'music' ? 'songs' : (tab === 'shop' ? 'shopItems' : 'rooms'))].map(item => (
+                <div key={item.id} className="p-3 bg-black/5 rounded flex justify-between items-center text-xs">
+                  <div>
+                    <p className="font-bold truncate max-w-[200px]">{item.name || item.title || item.q}</p>
+                    <p className="opacity-60">{item.isCompleted ? '✓ Hoàn thành' : (item.artist || item.category || 'Data ID: '+item.id)}</p>
+                  </div>
+                  <button onClick={() => handleDelete(item.id, tab === 'quiz' ? 'quizzes' : (tab === 'music' ? 'songs' : (tab === 'shop' ? 'shopItems' : 'rooms')))} className="px-3 py-1 bg-rose-500/20 text-rose-500 font-bold rounded hover:bg-rose-500/40">Xóa</button>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       );
