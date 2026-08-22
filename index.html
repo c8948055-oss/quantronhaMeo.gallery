@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quán Trọ Nhà Mèo</title>
+  <title>Quán Trọ Nhà Mèo - Kỷ Nguyên Mới</title>
   
   <!-- React & Babel CDN -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -31,9 +31,15 @@
       0%, 100% { opacity: 0.2; transform: scale(0.8) translateY(0); }
       50% { opacity: 0.9; transform: scale(1.3) translateY(-15px); }
     }
+    @keyframes pop-in {
+      0% { transform: scale(0); opacity: 0; }
+      80% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
     .animate-spin-slow { animation: spin-slow 8s linear infinite; }
     .animate-float-1 { animation: float-note 2.5s ease-in-out infinite; }
     .animate-float-2 { animation: float-note 3s ease-in-out 1s infinite; }
+    .animate-pop-in { animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     .leaf-particle { position: fixed; pointer-events: none; z-index: 1; animation: falling-leaf 12s linear infinite; }
     .firefly-particle { position: fixed; pointer-events: none; z-index: 1; border-radius: 50%; animation: firefly-glow 4s ease-in-out infinite; }
     
@@ -49,19 +55,30 @@
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo } = React;
 
-    // --- MOCK DATABASE KHỞI TẠO (LOCALSTORAGE) ---
+    // --- MOCK DATABASE KHỞI TẠO ---
     const INITIAL_DATA = {
       rooms: [
         { id: 1, name: "Phòng Trà Mây Ngủ", image: "https://picsum.photos/seed/room1/600/400", tags: ["Thư giãn", "Trà đạo"], note: "Có ban công ngắm suối", idea: "Thiết kế gỗ mộc và rèm lụa bồng bềnh", isCompleted: false, link: "", votes: 42, pinRank: 1, createdAt: Date.now() - 30000 },
         { id: 2, name: "Gác Mái Đom Đóm", image: "https://picsum.photos/seed/room2/600/400", tags: ["Lãng mạn", "Ban đêm"], note: "Kính thiên văn ngắm sao", idea: "Trần nhà kính nhìn thẳng lên bầu trời đêm", isCompleted: false, link: "", votes: 35, pinRank: 2, createdAt: Date.now() - 20000 },
-        { id: 3, name: "Hiên Nhà Nắng Ấm", image: "https://picsum.photos/seed/room3/600/400", tags: ["Sân vườn", "Mèo"], note: "Gần khu vườn thảo mộc", idea: "Có 5 chú mèo lười nằm sưởi nắng", isCompleted: false, link: "", votes: 28, pinRank: 3, createdAt: Date.now() - 10000 },
-        { id: 4, name: "Phòng Suối Nhạc", image: "https://picsum.photos/seed/room4/600/400", tags: ["Âm nhạc"], note: "Tiếng nước róc rách", idea: "Được xây dựng ngay bên bờ suối đá", isCompleted: false, link: "", votes: 15, pinRank: 0, createdAt: Date.now() },
         { id: 5, name: "Căn Nhà Gỗ Cũ (Đã Mở)", image: "https://picsum.photos/seed/room5/600/400", tags: ["Hoàn thành"], note: "Đã đi vào hoạt động", idea: "Căn phòng đầu tiên của quán", isCompleted: true, link: "https://google.com", votes: 89, pinRank: 0, createdAt: Date.now() - 100000 }
       ],
       songs: [
         { id: 1, title: "Khúc Hát Ban Mai", artist: "Mèo Du Ca", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-        { id: 2, title: "Gió Qua Thung Lũng", artist: "Quán Trọ Band", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-        { id: 3, title: "Đêm Đom Đóm Lập Lòe", artist: "Thính Phòng Mèo", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+        { id: 2, title: "Gió Qua Thung Lũng", artist: "Quán Trọ Band", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }
+      ],
+      quizzes: [
+        { id: 1, question: "Loài hoa nào thường nở rộ báo hiệu mùa xuân về bên hiên nhà gỗ?", options: ["Hoa Cúc Họa Mi", "Hoa Mai Vàng & Đào", "Hoa Hướng Dương", "Hoa Bồ Công Anh"], correctIndex: 1 },
+        { id: 2, title: "Mèo con thường thích uống gì nhất vào buổi sáng?", options: ["Sữa ấm", "Nước suối", "Trà xanh", "Cà phê đen"], correctIndex: 0 },
+        { id: 3, title: "Âm thanh nào giúp bạn dễ ngủ nhất tại quán trọ?", options: ["Tiếng xe cộ", "Tiếng mưa rơi róc rách", "Tiếng tivi", "Tiếng đồng hồ"], correctIndex: 1 }
+      ],
+      settings: {
+        rewards: { water: 25, star: 20, diary: 15, story: 10, quiz: 20, tea: 20, lostItem: 5, fishCommon: 8, fishRare: 15, fishLegend: 40 },
+        gameImages: { garden: "", fishing: "", star: "", diary: "", story: "", quiz: "", tea: "" }
+      },
+      shopItems: [
+        { id: "giuong_nem", name: "Giường Nệm Bông", category: "Nội thất", price: 40, icon: "🛏️" },
+        { id: "ke_sach", name: "Kệ Sách Cổ", category: "Nội thất", price: 35, icon: "📚" },
+        { id: "ho_nuoc", name: "Hồ Nước Nhỏ", category: "Sân vườn", price: 50, icon: "⛲" }
       ],
       user: {
         name: "Vị Khách Đáng Yêu",
@@ -75,48 +92,48 @@
         houseItems: ["giuong_go", "tham_co", "chau_hoa"],
         gardenItems: ["hoa_cuc", "ban_tra"],
         fishCollection: ["Cá Bảy Màu", "Cá Chép Vàng"],
-        teaRecipes: ["Trà Mưa Rừng"],
-        diaryEntries: [
-          { id: 1, author: "Mèo Mun", text: "Hôm nay gió mát thật, nằm hiên nhà cả ngày.", isPublic: true, reacts: { leaf: 5, tea: 3, flower: 8, moon: 2 } }
-        ],
-        storyChapters: [
-          { id: 1, author: "Quản Gia", text: "Đêm đó, căn phòng số 07 tự nhiên sáng đèn lấp lánh ánh xanh..." }
-        ]
-      },
-      shopItems: [
-        { id: "giuong_nem", name: "Giường Nệm Bông", category: "Nội thất", price: 40, icon: "🛏️" },
-        { id: "ke_sach", name: "Kệ Sách Cổ", category: "Nội thất", price: 35, icon: "📚" },
-        { id: "ho_nuoc", name: "Hồ Nước Nhỏ", category: "Sân vườn", price: 50, icon: "⛲" },
-        { id: "cay_phong", name: "Cây Phong Đỏ", category: "Cây cối", price: 30, icon: "🍁" },
-        { id: "meo_cam", name: "Mèo Cam Béo", category: "Thú cưng", price: 80, icon: "🐈" },
-        { id: "hieu_ung_sao", name: "Đom Đóm Quanh Nhà", category: "Hiệu ứng", price: 60, icon: "✨" }
-      ],
-      achievements: [
-        { id: 1, title: "Khách Quen", desc: "Ghé Nhà Trọ 7 ngày", reward: 50, icon: "🍃", unlocked: false },
-        { id: 2, title: "Người Làm Vườn", desc: "Thu hoạch cây 3 lần", reward: 40, icon: "🌱", unlocked: true },
-        { id: 3, title: "Bạn Của Dòng Suối", desc: "Bắt được 5 loài cá", reward: 60, icon: "🎣", unlocked: false }
-      ]
+        diaryEntries: [],
+        storyChapters: [],
+        gardenProgress: 0,
+        // Daily trackers
+        daily: {
+          date: "", water: 0, fish: 0, star: 0, diary: 0, story: 0, tea: 0, quiz: 0, lostItemsFound: 0, maxLostItems: 6
+        }
+      }
     };
 
     function App() {
-      // --- THEME & GLOBAL STATE ---
       const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
       const [db, setDb] = useState(() => {
         const saved = localStorage.getItem("quan_tro_db");
         return saved ? JSON.parse(saved) : INITIAL_DATA;
       });
-      const [activeTab, setActiveTab] = useState("rooms"); // 'rooms' | 'house' | 'games' | 'shop' | 'admin'
-      const [userAuth, setUserAuth] = useState(() => JSON.parse(localStorage.getItem("user_session")) || null);
+      const [activeTab, setActiveTab] = useState("rooms");
       const [isAdmin, setIsAdmin] = useState(false);
       
-      // Modals & UI States
       const [showLoginModal, setShowLoginModal] = useState(false);
-      const [showAdminModal, setShowAdminModal] = useState(false);
       const [showMusicDrawer, setShowMusicDrawer] = useState(false);
-      const [roomSortBy, setRoomSortBy] = useState("newest"); // 'newest' | 'votes'
       const [notification, setNotification] = useState("");
 
-      // Save to localStorage
+      // CHECK AND RESET DAILY LIMITS (00:00 Reset)
+      useEffect(() => {
+        const todayStr = new Date().toDateString();
+        if (db.user.daily?.date !== todayStr) {
+          const maxLost = Math.floor(Math.random() * 5) + 6; // Random 6 to 10
+          setDb(prev => ({
+            ...prev,
+            user: {
+              ...prev.user,
+              daily: {
+                date: todayStr, water: 0, fish: 0, star: 0, diary: 0, story: 0, tea: 0, quiz: 0,
+                lostItemsFound: 0, maxLostItems: maxLost
+              }
+            }
+          }));
+        }
+      }, []); // Run once on mount
+
+      // SAVE DB TO LOCALSTORAGE
       useEffect(() => {
         localStorage.setItem("quan_tro_db", JSON.stringify(db));
       }, [db]);
@@ -138,7 +155,7 @@
         notify(`🍀 +${amount} Lộc (${reason})`);
       };
 
-      // --- AUDIO ENGINE ---
+      // AUDIO ENGINE
       const [isPlaying, setIsPlaying] = useState(false);
       const [currentSongIndex, setCurrentSongIndex] = useState(0);
       const [currentTime, setCurrentTime] = useState(0);
@@ -147,9 +164,7 @@
 
       useEffect(() => {
         if (db.songs.length > 0) {
-          const randIdx = Math.floor(Math.random() * db.songs.length);
-          setCurrentSongIndex(randIdx);
-          audioRef.current.src = db.songs[randIdx].url;
+          audioRef.current.src = db.songs[0].url;
         }
       }, []);
 
@@ -158,7 +173,6 @@
         const updateTime = () => setCurrentTime(audio.currentTime);
         const updateDuration = () => setDuration(audio.duration || 0);
         const handleEnded = () => {
-          // Play next in sequence
           setCurrentSongIndex(prev => {
             const next = (prev + 1) % db.songs.length;
             audio.src = db.songs[next].url;
@@ -183,9 +197,11 @@
           audioRef.current.pause();
           setIsPlaying(false);
         } else {
-          audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {
-            notify("Nhấp lại đĩa nhạc để trình duyệt phát âm thanh nhé!");
-          });
+          if (db.songs.length > 0) {
+            audioRef.current.play().then(() => setIsPlaying(true)).catch(() => notify("Vui lòng tương tác với trang trước!"));
+          } else {
+            notify("Chưa có bài hát nào trong Playlist!");
+          }
         }
       };
 
@@ -195,7 +211,7 @@
         audioRef.current.play().then(() => setIsPlaying(true));
       };
 
-      // --- CHECK-IN ENGINE ---
+      // CHECK-IN
       const handleCheckIn = () => {
         const today = new Date().toDateString();
         if (db.user.lastCheckIn === today) {
@@ -211,96 +227,94 @@
 
         setDb(prev => ({
           ...prev,
-          user: {
-            ...prev.user,
-            loc: prev.user.loc + reward,
-            checkInStreak: newStreak,
-            lastCheckIn: today
-          }
+          user: { ...prev.user, loc: prev.user.loc + reward, checkInStreak: newStreak, lastCheckIn: today }
         }));
         notify(`🎉 Ghé trọ ngày ${newStreak}! Nhận +${reward} 🍀 Lộc`);
       };
 
-      // --- RANDOM LOST ITEM MINI-GAME ---
+      // LOST ITEM MECHANIC (5-8s lifespan, 6-10 times/day)
       const [lostItem, setLostItem] = useState(null);
       useEffect(() => {
-        const items = ["🍃", "🗝️", "🌸", "🐈", "⭐", "🎵", "🦋"];
-        const timer = setInterval(() => {
-          if (Math.random() > 0.4) {
+        if (!db.user.daily || db.user.daily.lostItemsFound >= db.user.daily.maxLostItems) return;
+        
+        const spawnTimer = setInterval(() => {
+          if (Math.random() > 0.6 && !lostItem) {
+            const items = ["🍃", "🗝️", "🌸", "🐈", "⭐", "🎵", "🦋", "🍄"];
+            const newId = Date.now();
             setLostItem({
+              id: newId,
               icon: items[Math.floor(Math.random() * items.length)],
-              top: Math.floor(Math.random() * 80 + 10) + "%",
-              left: Math.floor(Math.random() * 80 + 10) + "%"
+              top: Math.floor(Math.random() * 70 + 15) + "%",
+              left: Math.floor(Math.random() * 70 + 15) + "%"
             });
+            
+            // Auto remove after 5-8 seconds
+            const duration = Math.floor(Math.random() * 3000) + 5000;
+            setTimeout(() => {
+              setLostItem(prev => (prev && prev.id === newId ? null : prev));
+            }, duration);
           }
-        }, 15000);
-        return () => clearInterval(timer);
-      }, []);
+        }, 12000); // Check every 12 seconds
+        
+        return () => clearInterval(spawnTimer);
+      }, [db.user.daily, lostItem]);
 
       const collectLostItem = () => {
-        addLoc(5, "Tìm thấy vật thất lạc!");
+        const reward = db.settings.rewards.lostItem || 5;
+        addLoc(reward, "Tìm thấy vật thất lạc!");
         setLostItem(null);
+        setDb(prev => ({
+          ...prev,
+          user: { ...prev.user, daily: { ...prev.user.daily, lostItemsFound: prev.user.daily.lostItemsFound + 1 } }
+        }));
       };
 
-      // --- THEME STYLES ---
       const isDark = theme === "dark";
-      const bgClasses = isDark
-        ? "bg-slate-950 text-indigo-100"
-        : "bg-emerald-50/70 text-slate-800";
-      const cardBg = isDark
-        ? "bg-slate-900/80 border-slate-800 backdrop-blur-md"
-        : "bg-white/85 border-emerald-100/80 backdrop-blur-md shadow-sm";
+      const bgClasses = isDark ? "bg-slate-950 text-indigo-100" : "bg-emerald-50 text-slate-800";
+      const cardBg = isDark ? "bg-slate-900/80 border-slate-800 backdrop-blur-md" : "bg-white/90 border-emerald-100/80 backdrop-blur-md shadow-sm";
 
       return (
         <div className={`min-h-screen relative overflow-x-hidden ${bgClasses}`}>
-          {/* Background Atmospheric Particles */}
+          {/* Atmospheric Background */}
           {!isDark ? (
             <>
               <div className="leaf-particle" style={{ left: "10%", animationDelay: "0s" }}>🍃</div>
-              <div className="leaf-particle" style={{ left: "35%", animationDelay: "4s" }}>🌸</div>
-              <div className="leaf-particle" style={{ left: "65%", animationDelay: "2s" }}>🍃</div>
-              <div className="leaf-particle" style={{ left: "85%", animationDelay: "7s" }}>🌸</div>
+              <div className="leaf-particle" style={{ left: "45%", animationDelay: "5s" }}>🌸</div>
+              <div className="leaf-particle" style={{ left: "80%", animationDelay: "2s" }}>🍃</div>
             </>
           ) : (
             <>
-              <div className="firefly-particle bg-yellow-300 w-2 h-2" style={{ top: "20%", left: "15%", boxShadow: "0 0 10px #fef08a" }}></div>
-              <div className="firefly-particle bg-yellow-300 w-1.5 h-1.5" style={{ top: "60%", left: "45%", animationDelay: "2s", boxShadow: "0 0 8px #fef08a" }}></div>
-              <div className="firefly-particle bg-yellow-300 w-2 h-2" style={{ top: "40%", left: "80%", animationDelay: "1s", boxShadow: "0 0 10px #fef08a" }}></div>
-              <div className="firefly-particle bg-yellow-300 w-1 h-1" style={{ top: "75%", left: "25%", animationDelay: "3s" }}></div>
+              <div className="firefly-particle bg-yellow-300 w-2 h-2" style={{ top: "30%", left: "20%", boxShadow: "0 0 10px #fef08a" }}></div>
+              <div className="firefly-particle bg-yellow-300 w-1.5 h-1.5" style={{ top: "70%", left: "60%", animationDelay: "2s", boxShadow: "0 0 8px #fef08a" }}></div>
             </>
           )}
 
-          {/* Lost Item Floating Game */}
+          {/* Lost Item Button */}
           {lostItem && (
             <button
+              key={lostItem.id}
               onClick={collectLostItem}
               style={{ top: lostItem.top, left: lostItem.left }}
-              className="fixed z-40 text-2xl p-2 bg-white/40 dark:bg-slate-800/60 rounded-full shadow-lg hover:scale-125 transition-transform animate-bounce"
+              className="fixed z-40 text-3xl p-2 bg-white/40 dark:bg-slate-800/60 rounded-full shadow-lg hover:scale-125 transition-transform animate-pop-in"
               title="Nhặt vật phẩm bí mật!"
             >
               {lostItem.icon}
             </button>
           )}
 
-          {/* Notification Toast */}
+          {/* Notifications */}
           {notification && (
-            <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 px-5 py-2.5 bg-emerald-600 dark:bg-indigo-600 text-white rounded-full shadow-xl text-sm font-medium animate-pulse flex items-center gap-2">
-              <span>{notification}</span>
+            <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 px-5 py-2.5 bg-emerald-600 dark:bg-indigo-600 text-white rounded-full shadow-xl text-sm font-medium animate-pulse">
+              {notification}
             </div>
           )}
 
-          {/* HEADER SECTION */}
-          <header className={`border-b sticky top-0 z-30 ${isDark ? "border-slate-800 bg-slate-950/80" : "border-emerald-100 bg-white/80"} backdrop-blur-md`}>
+          {/* HEADER */}
+          <header className={`border-b sticky top-0 z-30 ${isDark ? "border-slate-800 bg-slate-950/90" : "border-emerald-100 bg-white/90"} backdrop-blur-md`}>
             <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-              {/* Logo & Title */}
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab("rooms")}>
-                <div className="w-11 h-11 rounded-full overflow-hidden bg-emerald-100 dark:bg-slate-800 border-2 border-emerald-400 dark:border-indigo-400 flex items-center justify-center shadow-inner">
-                  <img
-                    src="ChatGPT_Image_21_56_27_31_thg_7__2026-removebg-preview.png"
-                    alt="Logo"
-                    onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/bottts/svg?seed=MeoLogo"; }}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-11 h-11 rounded-full overflow-hidden bg-emerald-100 flex items-center justify-center shadow-inner border-2 border-emerald-400">
+                  <span className="text-2xl">🐱</span>
                 </div>
                 <div>
                   <h1 className="font-bold text-lg tracking-wide text-emerald-800 dark:text-indigo-200">Quán trọ nhà Mèo</h1>
@@ -308,12 +322,11 @@
                 </div>
               </div>
 
-              {/* Navigation Tabs */}
+              {/* Desktop Nav */}
               <nav className="hidden md:flex items-center gap-1">
                 {[
                   { id: "rooms", label: "Phòng Sắp Ra Mắt", icon: "🚪" },
-                  { id: "house", label: "Nhà & Sân Vườn", icon: "🏡" },
-                  { id: "games", label: "Góc Thư Giãn (8 Games)", icon: "🎮" },
+                  { id: "games", label: "Góc Thư Giãn (Games)", icon: "🎮" },
                   { id: "shop", label: "Cửa Hàng", icon: "🛍️" },
                   ...(isAdmin ? [{ id: "admin", label: "Trang Quản Trị", icon: "⚙️" }] : [])
                 ].map(tab => (
@@ -322,59 +335,33 @@
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                       activeTab === tab.id
-                        ? (isDark ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "bg-emerald-600 text-white shadow-md shadow-emerald-600/30")
+                        ? (isDark ? "bg-indigo-600 text-white shadow-md" : "bg-emerald-600 text-white shadow-md")
                         : "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"
                     }`}
                   >
-                    <span>{tab.icon}</span>
-                    <span>{tab.label}</span>
+                    <span>{tab.icon}</span> <span>{tab.label}</span>
                   </button>
                 ))}
               </nav>
 
-              {/* Right Controls: Loc + Theme + Auth */}
+              {/* Right Controls */}
               <div className="flex items-center gap-2.5">
-                {/* Lộc Pill */}
-                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${
-                  isDark ? "bg-slate-900 border-indigo-900/60 text-yellow-300" : "bg-emerald-100/70 border-emerald-200 text-emerald-800"
-                }`}>
-                  <span>🍀</span>
-                  <span>{db.user.loc}</span>
+                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${isDark ? "bg-slate-900 border-indigo-900/60 text-yellow-300" : "bg-emerald-100/70 border-emerald-200 text-emerald-800"}`}>
+                  <span>🍀</span> <span>{db.user.loc}</span>
                 </div>
-
-                {/* Theme Toggle */}
-                <button
-                  onClick={() => setTheme(isDark ? "light" : "dark")}
-                  className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-sm transition-colors"
-                  title="Chuyển chế độ ngày/đêm"
-                >
-                  {isDark ? "🌙 Đêm" : "☀️ Ngày"}
+                <button onClick={() => setTheme(isDark ? "light" : "dark")} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-sm">
+                  {isDark ? "🌙" : "☀️"}
                 </button>
-
-                {/* Check-In Button */}
-                <button
-                  onClick={handleCheckIn}
-                  className={`hidden sm:flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold shadow transition-transform active:scale-95 ${
-                    isDark ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-amber-500 hover:bg-amber-400 text-white"
-                  }`}
-                >
-                  <span>🍀 Ghé Trọ</span>
+                <button onClick={handleCheckIn} className={`hidden sm:flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold shadow transition-transform active:scale-95 ${isDark ? "bg-amber-600 text-white" : "bg-amber-500 text-white"}`}>
+                  🍀 Ghé Trọ
                 </button>
-
-                {/* Admin or Login */}
                 {!isAdmin ? (
-                  <button
-                    onClick={() => setShowAdminModal(true)}
-                    className="text-xs px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 hover:border-emerald-500 font-medium"
-                  >
+                  <button onClick={() => setShowLoginModal(true)} className="text-xs px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 hover:border-emerald-500 font-medium">
                     Admin
                   </button>
                 ) : (
-                  <button
-                    onClick={() => { setIsAdmin(false); notify("Đã thoát chế độ Admin"); }}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-400 font-medium border border-rose-500/30"
-                  >
-                    Đăng xuất Admin
+                  <button onClick={() => { setIsAdmin(false); setActiveTab("rooms"); notify("Đã thoát Admin"); }} className="text-xs px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-400 font-medium border border-rose-500/30">
+                    Đăng xuất
                   </button>
                 )}
               </div>
@@ -383,110 +370,50 @@
             {/* Mobile Nav */}
             <div className="flex md:hidden overflow-x-auto px-4 py-2 gap-2 border-t border-black/5 dark:border-white/5 text-xs">
               <button onClick={() => setActiveTab("rooms")} className={`px-2.5 py-1 rounded-full whitespace-nowrap ${activeTab === 'rooms' ? 'font-bold underline' : ''}`}>🚪 Phòng</button>
-              <button onClick={() => setActiveTab("house")} className={`px-2.5 py-1 rounded-full whitespace-nowrap ${activeTab === 'house' ? 'font-bold underline' : ''}`}>🏡 Nhà Riêng</button>
-              <button onClick={() => setActiveTab("games")} className={`px-2.5 py-1 rounded-full whitespace-nowrap ${activeTab === 'games' ? 'font-bold underline' : ''}`}>🎮 Games (8)</button>
+              <button onClick={() => setActiveTab("games")} className={`px-2.5 py-1 rounded-full whitespace-nowrap ${activeTab === 'games' ? 'font-bold underline' : ''}`}>🎮 Games</button>
               <button onClick={() => setActiveTab("shop")} className={`px-2.5 py-1 rounded-full whitespace-nowrap ${activeTab === 'shop' ? 'font-bold underline' : ''}`}>🛍️ Cửa Hàng</button>
-              {isAdmin && <button onClick={() => setActiveTab("admin")} className={`px-2.5 py-1 rounded-full whitespace-nowrap ${activeTab === 'admin' ? 'font-bold underline' : ''}`}>⚙️ Quản Trị</button>}
+              {isAdmin && <button onClick={() => setActiveTab("admin")} className={`px-2.5 py-1 rounded-full whitespace-nowrap text-rose-500 font-bold`}>⚙️ Quản Trị</button>}
             </div>
           </header>
 
-          {/* MAIN VIEW CONTROLLER */}
           <main className="max-w-6xl mx-auto px-4 py-8 relative z-10 pb-28">
             {activeTab === "rooms" && <RoomsView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} />}
-            {activeTab === "house" && <HouseView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} addLoc={addLoc} />}
             {activeTab === "games" && <MiniGamesView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} addLoc={addLoc} />}
             {activeTab === "shop" && <ShopView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} />}
             {activeTab === "admin" && isAdmin && <AdminView db={db} setDb={setDb} notify={notify} cardBg={cardBg} isDark={isDark} />}
           </main>
 
-          {/* FLOATING VINYL MUSIC PLAYER (BOTTOM-RIGHT) */}
+          {/* MUSIC PLAYER WIDGET */}
           <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
-            {/* Music Notes Animation */}
             {isPlaying && (
-              <div className="relative w-12 h-6 pointer-events-none mb-1 text-emerald-500 dark:text-indigo-400 font-bold">
+              <div className="relative w-12 h-6 pointer-events-none mb-1 text-emerald-500 font-bold">
                 <span className="absolute left-2 animate-float-1">🎵</span>
                 <span className="absolute right-2 animate-float-2">🎶</span>
               </div>
             )}
-
             <div className="flex items-center gap-2">
-              {/* Expand Playlist Button */}
-              <button
-                onClick={() => setShowMusicDrawer(!showMusicDrawer)}
-                className={`p-2.5 rounded-full shadow-lg transition-transform active:scale-95 ${
-                  isDark ? "bg-slate-800 border border-slate-700 text-indigo-200" : "bg-white border border-emerald-200 text-emerald-800"
-                }`}
-                title="Giai Điệu Quán Trọ"
-              >
-                📜
-              </button>
-
-              {/* Vinyl Disc Button */}
-              <div
-                onClick={togglePlay}
-                className={`w-14 h-14 rounded-full border-4 cursor-pointer shadow-xl flex items-center justify-center relative transition-transform hover:scale-105 ${
-                  isDark ? "border-slate-800 bg-slate-900" : "border-emerald-100 bg-slate-900"
-                } ${isPlaying ? "animate-spin-slow" : ""}`}
-                title={isPlaying ? "Dừng nhạc" : "Phát nhạc"}
-              >
-                {/* Vinyl Texture */}
+              <button onClick={() => setShowMusicDrawer(!showMusicDrawer)} className={`p-2.5 rounded-full shadow-lg ${isDark ? "bg-slate-800 text-indigo-200" : "bg-white text-emerald-800"}`}>📜</button>
+              <div onClick={togglePlay} className={`w-14 h-14 rounded-full border-4 cursor-pointer shadow-xl flex items-center justify-center relative transition-transform hover:scale-105 ${isDark ? "border-slate-800 bg-slate-900" : "border-emerald-100 bg-slate-900"} ${isPlaying ? "animate-spin-slow" : ""}`}>
                 <div className="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center">
-                  <div className="w-5 h-5 rounded-full bg-amber-600 flex items-center justify-center text-[9px] text-white font-bold">
-                    {isPlaying ? "⏸" : "▶"}
-                  </div>
+                  <div className="w-5 h-5 rounded-full bg-amber-600 flex items-center justify-center text-[9px] text-white font-bold">{isPlaying ? "⏸" : "▶"}</div>
                 </div>
               </div>
             </div>
 
-            {/* Music Drawer Popup */}
             {showMusicDrawer && (
-              <div className={`mt-3 w-80 p-4 rounded-2xl shadow-2xl border ${cardBg} animate-in fade-in slide-in-from-bottom-5`}>
+              <div className={`mt-3 w-80 p-4 rounded-2xl shadow-2xl border ${cardBg}`}>
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-bold text-sm flex items-center gap-1.5">
-                    <span>📻</span>
-                    <span>Giai Điệu Quán Trọ</span>
-                  </h4>
-                  <button onClick={() => setShowMusicDrawer(false)} className="text-xs opacity-60 hover:opacity-100">✕</button>
+                  <h4 className="font-bold text-sm">📻 Giai Điệu Quán Trọ</h4>
+                  <button onClick={() => setShowMusicDrawer(false)} className="text-xs">✕</button>
                 </div>
-
-                {/* Current Song Playing */}
                 <div className="mb-3 p-2.5 rounded-xl bg-black/5 dark:bg-white/5 text-xs">
-                  <p className="font-semibold truncate">{db.songs[currentSongIndex]?.title || "Chưa chọn bài"}</p>
-                  <p className="opacity-70 text-[11px] truncate">{db.songs[currentSongIndex]?.artist || "Quán Trọ"}</p>
+                  <p className="font-semibold truncate">{db.songs[currentSongIndex]?.title || "Chưa có nhạc"}</p>
+                  <p className="opacity-70 text-[11px] truncate">{db.songs[currentSongIndex]?.artist}</p>
                 </div>
-
-                {/* Progress Bar (Scrubbable) */}
-                <div className="flex items-center gap-2 mb-3 text-[10px] opacity-80">
-                  <span>{Math.floor(currentTime / 60)}:{("0" + Math.floor(currentTime % 60)).slice(-2)}</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 100}
-                    value={currentTime}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      audioRef.current.currentTime = val;
-                      setCurrentTime(val);
-                    }}
-                    className="w-full h-1 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600 dark:accent-indigo-500"
-                  />
-                  <span>{Math.floor(duration / 60)}:{("0" + Math.floor(duration % 60)).slice(-2)}</span>
-                </div>
-
-                {/* Playlist */}
-                <div className="max-h-40 overflow-y-auto space-y-1 pr-1 text-xs">
+                <div className="max-h-40 overflow-y-auto space-y-1 text-xs">
                   {db.songs.map((s, idx) => (
-                    <div
-                      key={s.id}
-                      onClick={() => playSong(idx)}
-                      className={`p-2 rounded-lg cursor-pointer flex justify-between items-center transition-colors ${
-                        currentSongIndex === idx ? (isDark ? "bg-indigo-600/30 text-indigo-300 font-bold" : "bg-emerald-600/20 text-emerald-900 font-bold") : "hover:bg-black/5 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      <div className="truncate pr-2">
-                        <p className="truncate">{s.title}</p>
-                        <p className="text-[10px] opacity-60 truncate">{s.artist}</p>
-                      </div>
+                    <div key={s.id} onClick={() => playSong(idx)} className={`p-2 rounded-lg cursor-pointer flex justify-between transition-colors ${currentSongIndex === idx ? (isDark ? "bg-indigo-600/30 text-indigo-300 font-bold" : "bg-emerald-600/20 text-emerald-900 font-bold") : "hover:bg-black/5"}`}>
+                      <p className="truncate">{s.title}</p>
                       <span>{currentSongIndex === idx && isPlaying ? "🎵" : "▶"}</span>
                     </div>
                   ))}
@@ -495,20 +422,19 @@
             )}
           </div>
 
-          {/* ADMIN LOGIN MODAL */}
-          {showAdminModal && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className={`max-w-sm w-full p-6 rounded-2xl shadow-2xl border ${cardBg}`}>
-                <h3 className="font-bold text-base mb-2">Đăng Nhập Quản Trị Viên</h3>
-                <p className="text-xs opacity-70 mb-4">Nhập mật khẩu quản trị Quán trọ nhà Mèo</p>
+          {/* SECURE ADMIN LOGIN MODAL */}
+          {showLoginModal && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className={`max-w-sm w-full p-8 rounded-3xl shadow-2xl border ${cardBg}`}>
+                <div className="text-center mb-6">
+                  <span className="text-4xl">🔐</span>
+                  <h3 className="font-black text-lg mt-2">Xác Thực Quản Trị Viên</h3>
+                  <p className="text-xs opacity-70 mt-1">Khu vực dành riêng cho người điều hành</p>
+                </div>
                 <form onSubmit={(e) => {
                   e.preventDefault();
-                  const pass = e.target.password.value;
-                  if (pass === "bhnt2006") {
-                    setIsAdmin(true);
-                    setShowAdminModal(false);
-                    setActiveTab("admin");
-                    notify("Đăng nhập Admin thành công!");
+                  if (e.target.password.value === "bhnt2006") {
+                    setIsAdmin(true); setShowLoginModal(false); setActiveTab("admin"); notify("Đăng nhập Admin thành công!");
                   } else {
                     notify("Mật khẩu không chính xác!");
                   }
@@ -516,13 +442,13 @@
                   <input
                     name="password"
                     type="password"
-                    placeholder="Mật khẩu (Gợi ý: bhnt2006)"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Nhập mật khẩu..."
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-black/5 dark:bg-white/5 mb-5 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono tracking-widest text-center"
                     autoFocus
                   />
-                  <div className="flex justify-end gap-2 text-xs font-semibold">
-                    <button type="button" onClick={() => setShowAdminModal(false)} className="px-4 py-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">Hủy</button>
-                    <button type="submit" className="px-4 py-2 bg-emerald-600 dark:bg-indigo-600 text-white rounded-xl shadow">Xác Nhận</button>
+                  <div className="flex gap-3 text-sm font-bold">
+                    <button type="button" onClick={() => setShowLoginModal(false)} className="flex-1 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">Thoát</button>
+                    <button type="submit" className="flex-1 py-3 bg-emerald-600 dark:bg-indigo-600 text-white rounded-xl shadow-lg">Mở Khóa</button>
                   </div>
                 </form>
               </div>
@@ -533,11 +459,9 @@
     }
 
     // ==========================================
-    // MODULE 1: ROOMS SHOWCASE VIEW
+    // ROOMS VIEW
     // ==========================================
     function RoomsView({ db, setDb, notify, cardBg, isDark }) {
-      const [sortBy, setSortBy] = useState("newest");
-
       const handleVote = (roomId) => {
         setDb(prev => ({
           ...prev,
@@ -546,76 +470,36 @@
         notify("Đã Chấm hóng thành công! 💖");
       };
 
-      // Tách phòng: Ghim top 1 2 3, phòng thường chưa xong, và phòng đã hoàn thành (bị ép xuống cuối)
       const pinnedRooms = useMemo(() => {
         return db.rooms.filter(r => r.pinRank > 0 && !r.isCompleted).sort((a, b) => a.pinRank - b.pinRank);
       }, [db.rooms]);
 
       const otherRooms = useMemo(() => {
-        const uncompleted = db.rooms.filter(r => r.pinRank === 0 && !r.isCompleted);
-        if (sortBy === "votes") {
-          uncompleted.sort((a, b) => b.votes - a.votes);
-        } else {
-          uncompleted.sort((a, b) => b.createdAt - a.createdAt);
-        }
+        const uncompleted = db.rooms.filter(r => r.pinRank === 0 && !r.isCompleted).sort((a, b) => b.createdAt - a.createdAt);
         const completed = db.rooms.filter(r => r.isCompleted).sort((a, b) => b.votes - a.votes);
-        return [...uncompleted, ...completed];
-      }, [db.rooms, sortBy]);
+        return [...uncompleted, ...completed]; // Completed ALWAYS pushed to bottom
+      }, [db.rooms]);
 
       return (
         <div className="space-y-10">
-          {/* Hero Banner */}
-          <div className={`p-8 rounded-3xl border ${cardBg} text-center space-y-3 relative overflow-hidden`}>
+          <div className={`p-8 rounded-3xl border ${cardBg} text-center space-y-3`}>
             <span className="text-3xl">🌸 🍃 🏡</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Các Căn Phòng Sắp Ra Mắt</h2>
-            <p className="text-xs sm:text-sm max-w-xl mx-auto opacity-75">
-              Khám phá và "Chấm hóng" những không gian nghỉ dưỡng mới nhất đang được hoàn thiện tại Quán trọ nhà Mèo.
-            </p>
+            <h2 className="text-2xl font-extrabold">Các Căn Phòng Quán Trọ</h2>
           </div>
 
-          {/* BẢNG GHIM TOP 3 PHÒNG SẮP RA MẮT */}
           {pinnedRooms.length > 0 && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📌</span>
-                <h3 className="font-bold text-lg tracking-wide">Top 3 Phòng Ra Mắt Sớm Nhất (Trong Tháng Tới)</h3>
-              </div>
+              <h3 className="font-bold text-lg">📌 Bảng Ghim Đặc Biệt</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {pinnedRooms.map(room => (
-                  <RoomCard key={room.id} room={room} onVote={() => handleVote(room.id)} isPinned rank={room.pinRank} cardBg={cardBg} isDark={isDark} />
-                ))}
+                {pinnedRooms.map(room => <RoomCard key={room.id} room={room} onVote={() => handleVote(room.id)} isPinned rank={room.pinRank} cardBg={cardBg} isDark={isDark} />)}
               </div>
             </div>
           )}
 
-          {/* DANH SÁCH CÁC PHÒNG KHÁC */}
           <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h3 className="font-bold text-lg tracking-wide flex items-center gap-2">
-                <span>🚪</span>
-                <span>Tất Cả Các Phòng Nghỉ Khác</span>
-              </h3>
-              {/* Sort Filter Buttons */}
-              <div className="flex items-center gap-1.5 p-1 bg-black/5 dark:bg-white/5 rounded-xl text-xs font-semibold">
-                <button
-                  onClick={() => setSortBy("newest")}
-                  className={`px-3 py-1 rounded-lg transition-all ${sortBy === "newest" ? "bg-white dark:bg-slate-800 shadow-sm" : "opacity-60"}`}
-                >
-                  ✨ Mới nhất
-                </button>
-                <button
-                  onClick={() => setSortBy("votes")}
-                  className={`px-3 py-1 rounded-lg transition-all ${sortBy === "votes" ? "bg-white dark:bg-slate-800 shadow-sm" : "opacity-60"}`}
-                >
-                  🔥 Nhiều vote nhất
-                </button>
-              </div>
-            </div>
-
+            <h3 className="font-bold text-lg">🚪 Tất Cả Phòng Nghỉ</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {otherRooms.map(room => (
-                <RoomCard key={room.id} room={room} onVote={() => handleVote(room.id)} cardBg={cardBg} isDark={isDark} />
-              ))}
+              {otherRooms.map(room => <RoomCard key={room.id} room={room} onVote={() => handleVote(room.id)} cardBg={cardBg} isDark={isDark} />)}
             </div>
           </div>
         </div>
@@ -624,64 +508,28 @@
 
     function RoomCard({ room, onVote, isPinned, rank, cardBg, isDark }) {
       return (
-        <div className={`rounded-2xl overflow-hidden border ${cardBg} flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl relative group`}>
-          {/* Pinned Rank Badge */}
-          {isPinned && (
-            <div className="absolute top-3 left-3 z-20 px-3 py-1 bg-amber-500 text-white text-xs font-extrabold rounded-full shadow-lg flex items-center gap-1">
-              <span>⭐ Top {rank}</span>
-            </div>
-          )}
-
-          {/* Completed Badge */}
-          {room.isCompleted && (
-            <div className="absolute top-3 right-3 z-20 px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full shadow-lg">
-              ✓ Đã Hoàn Thành
-            </div>
-          )}
-
-          {/* Image */}
-          <div className="h-48 overflow-hidden relative bg-slate-200 dark:bg-slate-800">
-            <img src={room.image} alt={room.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-            <div className="absolute bottom-2.5 left-3 right-3 flex flex-wrap gap-1">
-              {room.tags.map((t, idx) => (
-                <span key={idx} className="px-2 py-0.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-[10px] font-semibold rounded-md">
-                  #{t}
-                </span>
-              ))}
+        <div className={`rounded-2xl overflow-hidden border ${cardBg} flex flex-col transition-all hover:-translate-y-1 hover:shadow-xl relative`}>
+          {isPinned && <div className="absolute top-3 left-3 z-20 px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow-lg">⭐ Top {rank}</div>}
+          {room.isCompleted && <div className="absolute top-3 right-3 z-20 px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-full shadow-lg">✓ Hoàn Thành</div>}
+          
+          <div className="h-48 overflow-hidden relative bg-slate-800">
+            <img src={room.image} alt={room.name} className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" />
+            <div className="absolute bottom-2.5 left-3 flex flex-wrap gap-1">
+              {room.tags.map((t, idx) => <span key={idx} className="px-2 py-0.5 bg-white/80 dark:bg-slate-900/80 text-[10px] font-bold rounded-md">#{t}</span>)}
             </div>
           </div>
-
-          {/* Body */}
-          <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-            <div>
-              <h4 className="font-bold text-base line-clamp-1">{room.name}</h4>
-              <p className="text-xs opacity-75 mt-1"><strong>Ghi chú:</strong> {room.note}</p>
-              <p className="text-xs opacity-75 mt-0.5"><strong>Ý tưởng:</strong> {room.idea}</p>
-            </div>
-
-            {/* Bottom Actions */}
+          
+          <div className="p-4 flex-1 flex flex-col space-y-2">
+            <h4 className="font-bold text-base line-clamp-1">{room.name}</h4>
+            <p className="text-xs opacity-75"><strong>Ghi chú:</strong> {room.note}</p>
+            <p className="text-xs opacity-75"><strong>Ý tưởng:</strong> {room.idea}</p>
+            <div className="flex-1"></div>
             <div className="pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
-              <span className="text-xs font-semibold opacity-80">👀 {room.votes} Lượt hóng</span>
-              
+              <span className="text-xs font-bold opacity-80">👀 {room.votes} Lượt hóng</span>
               {room.isCompleted ? (
-                <a
-                  href={room.link || "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition-colors"
-                >
-                  Ghé Phòng →
-                </a>
+                <a href={room.link} target="_blank" rel="noreferrer" className="px-3.5 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl shadow">Ghé Phòng →</a>
               ) : (
-                <button
-                  onClick={onVote}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shadow transition-transform active:scale-95 flex items-center gap-1 ${
-                    isDark ? "bg-indigo-600 hover:bg-indigo-500 text-white" : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                  }`}
-                >
-                  <span>🐾 Chấm hóng</span>
-                </button>
+                <button onClick={onVote} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shadow ${isDark ? "bg-indigo-600 text-white" : "bg-emerald-600 text-white"}`}>🐾 Chấm hóng</button>
               )}
             </div>
           </div>
@@ -690,914 +538,514 @@
     }
 
     // ==========================================
-    // MODULE 2: PERSONAL HOUSE & GARDEN
-    // ==========================================
-    function HouseView({ db, setDb, notify, cardBg, isDark, addLoc }) {
-      const [customNameInput, setCustomNameInput] = useState("");
-      const [showRenameModal, setShowRenameModal] = useState(false);
-      const [activeSubTab, setActiveSubTab] = useState("house"); // 'house' | 'visitors'
-
-      const handleRenameHouse = (e) => {
-        e.preventDefault();
-        if (!customNameInput.trim()) return;
-
-        const cost = db.user.hasCustomHouseName ? 20 : 0;
-        if (db.user.loc < cost) {
-          notify("Không đủ Lộc để đổi tên biển nhà (Cần 20 Lộc)!");
-          return;
-        }
-
-        setDb(prev => ({
-          ...prev,
-          user: {
-            ...prev.user,
-            houseName: customNameInput.trim(),
-            hasCustomHouseName: true,
-            loc: prev.user.loc - cost
-          }
-        }));
-        notify(cost === 0 ? "Đặt tên biển nhà thành công (Miễn phí lần đầu)!" : "Đã đổi tên biển nhà (-20 Lộc)!");
-        setShowRenameModal(false);
-        setCustomNameInput("");
-      };
-
-      return (
-        <div className="space-y-8">
-          {/* Header House Sign Board */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 rounded-3xl border border-amber-900/20 bg-amber-50/50 dark:bg-slate-900/60 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl p-3 bg-amber-100 dark:bg-slate-800 rounded-2xl">🏡</div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-black text-amber-900 dark:text-amber-300">
-                    [Biển Tên]: {db.user.houseName || "Căn Nhà Nhỏ"}
-                  </h2>
-                  <button
-                    onClick={() => setShowRenameModal(true)}
-                    className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-800 dark:text-amber-300 rounded-md font-semibold hover:bg-amber-500/30"
-                  >
-                    ✏️ Đổi tên {db.user.hasCustomHouseName ? "(20 🍀)" : "(Free)"}
-                  </button>
-                </div>
-                <p className="text-xs opacity-75 mt-0.5">Chủ nhà: {db.user.name} • Cấp bậc: Khách Quen 🍃</p>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveSubTab("house")}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeSubTab === 'house' ? 'bg-amber-600 text-white' : 'bg-black/5 dark:bg-white/5'}`}
-              >
-                Khu Nhà & Sân Vườn
-              </button>
-              <button
-                onClick={() => setActiveSubTab("visitors")}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeSubTab === 'visitors' ? 'bg-amber-600 text-white' : 'bg-black/5 dark:bg-white/5'}`}
-              >
-                Ghé Thăm Khách Khác (🏡)
-              </button>
-            </div>
-          </div>
-
-          {activeSubTab === "house" ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* PHÒNG TRONG NHÀ (INTERIOR) */}
-              <div className={`p-6 rounded-3xl border ${cardBg} space-y-4`}>
-                <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-sm flex items-center gap-2">
-                    <span>🛋️</span>
-                    <span>Không Gian Trong Nhà (Pixel Vibe)</span>
-                  </h3>
-                  <span className="text-xs opacity-60">{db.user.houseItems.length} Vật phẩm</span>
-                </div>
-
-                {/* Pixel Canvas Visual Box */}
-                <div className="h-64 rounded-2xl bg-amber-950/10 dark:bg-slate-950/80 border-2 border-dashed border-amber-900/20 flex flex-wrap items-center justify-around p-4 relative overflow-hidden">
-                  <div className="text-center">
-                    <span className="text-5xl block animate-bounce">🐈</span>
-                    <span className="text-[10px] font-bold opacity-60">Mèo Lười Ngủ</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-5xl block">🛏️</span>
-                    <span className="text-[10px] font-bold opacity-60">Giường Mộc</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-4xl block">📚</span>
-                    <span className="text-[10px] font-bold opacity-60">Kệ Sách Cũ</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-4xl block">☕</span>
-                    <span className="text-[10px] font-bold opacity-60">Bàn Trà Chiều</span>
-                  </div>
-                </div>
-                <p className="text-[11px] opacity-60 text-center italic">
-                  Tip: Bạn có thể mua thêm nội thất tại Cửa Hàng bằng Lộc 🍀
-                </p>
-              </div>
-
-              {/* SÂN VƯỜN (YARD) */}
-              <div className={`p-6 rounded-3xl border ${cardBg} space-y-4`}>
-                <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-sm flex items-center gap-2">
-                    <span>🌿</span>
-                    <span>Sân Vườn & Suối Nhỏ</span>
-                  </h3>
-                  <span className="text-xs opacity-60">{db.user.gardenItems.length} Cây cối</span>
-                </div>
-
-                {/* Yard Canvas Box */}
-                <div className="h-64 rounded-2xl bg-emerald-900/10 dark:bg-emerald-950/30 border-2 border-dashed border-emerald-800/20 flex flex-wrap items-center justify-around p-4 relative overflow-hidden">
-                  <div className="text-center">
-                    <span className="text-5xl block">🌸</span>
-                    <span className="text-[10px] font-bold opacity-60">Vườn Cúc Trắng</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-5xl block">⛲</span>
-                    <span className="text-[10px] font-bold opacity-60">Suối Róc Rách</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-4xl block">🍃</span>
-                    <span className="text-[10px] font-bold opacity-60">Xích Đu Gỗ</span>
-                  </div>
-                </div>
-                <p className="text-[11px] opacity-60 text-center italic">
-                  Vườn của bạn có thể được các vị khách khác ghé thăm và gửi tặng Lộc!
-                </p>
-              </div>
-            </div>
-          ) : (
-            /* GHÉ THĂM NHÀ KHÁCH KHÁC */
-            <div className="space-y-4">
-              <h3 className="font-bold text-base flex items-center gap-2">
-                <span>🏡</span>
-                <span>Những Căn Nhà Được Yêu Thích</span>
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {[
-                  { name: "Căn Gác Hoa Hồng", owner: "Tiểu Tuyết", badge: "🌱 Khu Vườn Đẹp Nhất", likes: 88, decor: "🌹 🪑 🐈" },
-                  { name: "Hiên Nhà Trăng Khuyết", owner: "Minh Triết", badge: "🌙 Góc Đêm Đẹp Nhất", likes: 64, decor: "⭐ ⛲ 🛏️" },
-                  { name: "Tổ Nhỏ Rừng Xanh", owner: "Bảo Ngọc", badge: "🏡 Căn Nhà Ấm Nhất", likes: 52, decor: "🌳 📚 🍵" }
-                ].map((guest, idx) => (
-                  <div key={idx} className={`p-5 rounded-2xl border ${cardBg} space-y-3`}>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-sm">{guest.name}</h4>
-                        <p className="text-xs opacity-70">Chủ nhà: {guest.owner}</p>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold rounded-full">{guest.badge}</span>
-                    </div>
-                    <div className="h-24 bg-black/5 dark:bg-white/5 rounded-xl flex items-center justify-center text-3xl gap-3">
-                      {guest.decor}
-                    </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="text-xs opacity-75">💖 {guest.likes} Yêu thích</span>
-                      <button
-                        onClick={() => notify(`Đã thả tim và gửi lời chúc tới ${guest.owner}!`)}
-                        className="px-3 py-1 bg-rose-500/20 text-rose-500 hover:bg-rose-500/30 text-xs font-bold rounded-xl"
-                      >
-                        Thả Tim 🌸
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* RENAME MODAL */}
-          {showRenameModal && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className={`max-w-sm w-full p-6 rounded-2xl shadow-2xl border ${cardBg}`}>
-                <h3 className="font-bold text-base mb-2">Đổi Tên Biển Nhà Của Bạn</h3>
-                <p className="text-xs opacity-70 mb-4">
-                  {db.user.hasCustomHouseName ? "Chi phí đổi tên lần này là 20 🍀 Lộc." : "Lần đặt tên đầu tiên hoàn toàn MIỄN PHÍ!"}
-                </p>
-                <form onSubmit={handleRenameHouse}>
-                  <input
-                    value={customNameInput}
-                    onChange={(e) => setCustomNameInput(e.target.value)}
-                    placeholder="Nhập tên mới (VD: Hiên Nhà Gió Mát...)"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    autoFocus
-                  />
-                  <div className="flex justify-end gap-2 text-xs font-semibold">
-                    <button type="button" onClick={() => setShowRenameModal(false)} className="px-4 py-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5">Hủy</button>
-                    <button type="submit" className="px-4 py-2 bg-amber-600 text-white rounded-xl shadow">Lưu Tên Biển</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ==========================================
-    // MODULE 3: THE 8 MINI-GAMES HUB
+    // GAMES HUB (DAILY LIMITS APPLIED)
     // ==========================================
     function MiniGamesView({ db, setDb, notify, cardBg, isDark, addLoc }) {
       const [currentGame, setCurrentGame] = useState(1);
+      const { daily } = db.user;
 
       const games = [
-        { id: 1, name: "Chăm Vườn", icon: "🌱", desc: "Tưới nước nuôi mầm lớn" },
-        { id: 2, name: "Câu Cá Bên Suối", icon: "🎣", desc: "Thư giãn câu cá sưu tầm" },
-        { id: 3, name: "Vườn Sao Ban Đêm", icon: "🌙", desc: "Nối sao tạo chòm sao" },
-        { id: 4, name: "Nhật Ký Nhà Trọ", icon: "📖", desc: "Chia sẻ tâm tư nhẹ nhàng" },
-        { id: 5, name: "Một Câu Chuyện", icon: "📜", desc: "Viết truyện nối tiếp cộng đồng" },
-        { id: 6, name: "Câu Đố Nhỏ", icon: "🧩", desc: "Giải đố nhận Lộc" },
-        { id: 7, name: "Pha Trà", icon: "🍵", desc: "Sưu tầm công thức trà ngon" }
+        { id: 1, name: "Chăm Vườn", icon: "🌱", done: daily.water >= 1 },
+        { id: 2, name: "Câu Cá", icon: "🎣", done: daily.fish >= 1 },
+        { id: 3, name: "Vườn Sao", icon: "🌙", done: daily.star >= 1 },
+        { id: 4, name: "Nhật Ký", icon: "📖", done: daily.diary >= 1 },
+        { id: 5, name: "Nối Truyện", icon: "📜", done: daily.story >= 1 },
+        { id: 6, name: "Câu Đố", icon: "🧩", done: daily.quiz >= 1 },
+        { id: 7, name: "Pha Trà", icon: "🍵", done: daily.tea >= 1 }
       ];
 
       return (
         <div className="space-y-6">
-          {/* Game Selector Bar */}
           <div className="flex overflow-x-auto gap-2 pb-2">
             {games.map(g => (
-              <button
-                key={g.id}
-                onClick={() => setCurrentGame(g.id)}
-                className={`px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap flex items-center gap-2 border transition-all ${
-                  currentGame === g.id
-                    ? (isDark ? "bg-indigo-600 border-indigo-500 text-white shadow-lg" : "bg-emerald-600 border-emerald-500 text-white shadow-lg")
-                    : `${cardBg} opacity-80 hover:opacity-100`
-                }`}
-              >
-                <span className="text-base">{g.icon}</span>
-                <span>{g.name}</span>
+              <button key={g.id} onClick={() => setCurrentGame(g.id)} className={`px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap flex items-center gap-2 border transition-all ${currentGame === g.id ? (isDark ? "bg-indigo-600 text-white border-indigo-500 shadow-lg" : "bg-emerald-600 text-white border-emerald-500 shadow-lg") : `${cardBg} opacity-80`} ${g.done ? "opacity-50 line-through decoration-2" : ""}`}>
+                <span className="text-base">{g.icon}</span> <span>{g.name}</span>
               </button>
             ))}
           </div>
-
-          {/* Active Game Container */}
           <div className={`p-6 rounded-3xl border ${cardBg}`}>
-            {currentGame === 1 && <GardenGame addLoc={addLoc} notify={notify} />}
-            {currentGame === 2 && <FishingGame addLoc={addLoc} notify={notify} db={db} setDb={setDb} />}
-            {currentGame === 3 && <StarGardenGame addLoc={addLoc} notify={notify} isDark={isDark} />}
+            {currentGame === 1 && <GardenGame db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
+            {currentGame === 2 && <FishingGame db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
+            {currentGame === 3 && <StarGardenGame db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
             {currentGame === 4 && <DiaryGame db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
             {currentGame === 5 && <StoryGame db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
-            {currentGame === 6 && <QuizGame addLoc={addLoc} notify={notify} />}
+            {currentGame === 6 && <QuizGame db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
             {currentGame === 7 && <TeaGame db={db} setDb={setDb} addLoc={addLoc} notify={notify} />}
           </div>
         </div>
       );
     }
 
-    // GAME 1: CHĂM VƯỜN
-    function GardenGame({ addLoc, notify }) {
-      const [waterCount, setWaterCount] = useState(0);
-      const neededWaters = 4;
+    function GameVisual({ imgUrl, emoji }) {
+      return imgUrl ? (
+        <img src={imgUrl} className="w-32 h-32 mx-auto object-cover rounded-2xl shadow-inner mb-4" alt="Game Visual" />
+      ) : (
+        <span className="text-7xl block mb-4">{emoji}</span>
+      );
+    }
 
-      const stages = [
-        { icon: "🌰", name: "Hạt giống vừa gieo" },
-        { icon: "🌱", name: "Mầm non hé nụ" },
-        { icon: "🌿", name: "Cây lá sum suê" },
-        { icon: "🌸", name: "Cây Trà Nở Hoa Rực Rỡ" }
-      ];
-
-      const currentStage = Math.min(waterCount, stages.length - 1);
-
+    // GAME 1
+    function GardenGame({ db, setDb, addLoc, notify }) {
       const waterPlant = () => {
-        if (waterCount + 1 >= neededWaters) {
-          addLoc(25, "Thu hoạch Cây Trà Hoa!");
-          setWaterCount(0);
-        } else {
-          setWaterCount(prev => prev + 1);
-          notify("Tưới nước mát lành cho mầm non 🌱");
-        }
+        if (db.user.daily.water >= 1) return notify("Mỗi ngày chỉ tưới nước 1 lần thôi nhé, mai hãy quay lại! 🌱");
+        setDb(prev => ({ ...prev, user: { ...prev.user, gardenProgress: prev.user.gardenProgress + 1, daily: { ...prev.user.daily, water: 1 } } }));
+        addLoc(db.settings.rewards.water, "Tưới nước mầm non");
       };
-
+      const stages = ["🌰 Hạt giống", "🌱 Mầm non", "🌿 Lá sum suê", "🌸 Hoa rực rỡ"];
+      const currentStage = Math.min(db.user.gardenProgress, 3);
       return (
-        <div className="text-center space-y-4 max-w-md mx-auto py-4">
-          <h3 className="font-bold text-lg">🌱 Khu Vườn Thảo Mộc</h3>
-          <p className="text-xs opacity-75">Tưới đủ {neededWaters} lần nước để cây đơm hoa và nhận Lộc!</p>
-          <div className="h-40 flex flex-col items-center justify-center">
-            <span className="text-7xl transition-all duration-300 transform scale-110">{stages[currentStage].icon}</span>
-            <p className="font-semibold text-xs mt-3">{stages[currentStage].name}</p>
-          </div>
-          <button
-            onClick={waterPlant}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-2xl shadow-lg transition-transform active:scale-95"
-          >
-            {waterCount + 1 >= neededWaters ? "✨ Thu Hoạch (+25 🍀)" : `💧 Tưới Nước (${waterCount}/${neededWaters})`}
-          </button>
+        <div className="text-center max-w-md mx-auto py-4">
+          <h3 className="font-bold text-lg mb-2">🌱 Khu Vườn Thảo Mộc</h3>
+          <GameVisual imgUrl={db.settings.gameImages.garden} emoji={currentStage === 3 ? "🌸" : (currentStage === 2 ? "🌿" : (currentStage===1 ? "🌱" : "🌰"))} />
+          <p className="font-bold mb-4">{stages[currentStage]}</p>
+          <button onClick={waterPlant} disabled={db.user.daily.water >= 1} className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-2xl disabled:opacity-50">Tưới Nước Hôm Nay 💧</button>
         </div>
       );
     }
 
-    // GAME 2: CÂU CÁ
-    function FishingGame({ addLoc, notify, db, setDb }) {
-      const [status, setStatus] = useState("idle"); // 'idle' | 'waiting' | 'bite'
-      const [caughtFish, setCaughtFish] = useState(null);
-
+    // GAME 2
+    function FishingGame({ db, setDb, addLoc, notify }) {
+      const [status, setStatus] = useState("idle");
       const castRod = () => {
+        if (db.user.daily.fish >= 1) return notify("Hôm nay câu đủ rồi, nhường cá cho suối nghỉ ngơi nhé! 🎣");
         setStatus("waiting");
-        setCaughtFish(null);
-        const waitTime = Math.random() * 3000 + 2000;
-        setTimeout(() => {
-          setStatus("bite");
-        }, waitTime);
+        setTimeout(() => setStatus("bite"), Math.random() * 2000 + 1500);
       };
-
       const pullRod = () => {
         if (status === "bite") {
-          const fishList = [
-            { name: "Cá Bảy Màu Thường", rarity: "Thường", reward: 8, icon: "🐟" },
-            { name: "Cá Chép Vàng Quý", rarity: "Hiếm", reward: 15, icon: "🐠" },
-            { name: "Cá Thần Suối Băng", rarity: "Huyền Thoại", reward: 40, icon: "✨" }
-          ];
           const rand = Math.random();
-          const fish = rand > 0.85 ? fishList[2] : (rand > 0.5 ? fishList[1] : fishList[0]);
-          setCaughtFish(fish);
+          let fish, rw;
+          if (rand > 0.9) { fish = "Cá Thần Băng"; rw = db.settings.rewards.fishLegend; }
+          else if (rand > 0.5) { fish = "Cá Chép Vàng"; rw = db.settings.rewards.fishRare; }
+          else { fish = "Cá Bảy Màu"; rw = db.settings.rewards.fishCommon; }
+          
+          addLoc(rw, `Câu được ${fish}`);
+          setDb(prev => ({ ...prev, user: { ...prev.user, daily: { ...prev.user.daily, fish: 1 } } }));
           setStatus("idle");
-          addLoc(fish.reward, `Câu được ${fish.name}`);
-
-          if (!db.user.fishCollection.includes(fish.name)) {
-            setDb(prev => ({
-              ...prev,
-              user: { ...prev.user, fishCollection: [...prev.user.fishCollection, fish.name] }
-            }));
-          }
         } else {
-          notify("Cá chưa cắn câu mà bạn giật sớm quá rồi!");
+          notify("Giật sớm quá cá chạy mất rồi!");
           setStatus("idle");
         }
       };
-
       return (
-        <div className="text-center space-y-4 max-w-md mx-auto py-4">
-          <h3 className="font-bold text-lg">🎣 Câu Cá Bên Suối Đá</h3>
-          <p className="text-xs opacity-75">Thả câu và chú ý giật cần ngay khi có tín hiệu "CÁ CẮN CÂU!"</p>
-          <div className="h-36 flex flex-col items-center justify-center">
-            {status === "idle" && <span className="text-6xl">🌊</span>}
-            {status === "waiting" && <span className="text-5xl animate-bounce">🎣 ...đang chờ cá...</span>}
-            {status === "bite" && <span className="text-6xl animate-ping font-extrabold text-rose-500">❗ CẮN CÂU RỒI ❗</span>}
-          </div>
-          {status === "idle" && (
-            <button onClick={castRod} className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-2xl shadow">
-              Thả Cần Câu 🎣
-            </button>
-          )}
-          {status === "waiting" && (
-            <button onClick={() => setStatus("idle")} className="px-6 py-2.5 bg-slate-500 text-white text-xs font-bold rounded-2xl shadow">
-              Thu Cần Lại
-            </button>
-          )}
-          {status === "bite" && (
-            <button onClick={pullRod} className="px-8 py-3 bg-rose-600 hover:bg-rose-500 text-white text-sm font-extrabold rounded-2xl shadow-xl animate-pulse">
-              GIẬT CẦN NGAY! 🎣
-            </button>
-          )}
-          {caughtFish && (
-            <div className="p-3 bg-emerald-500/20 rounded-xl text-xs font-semibold">
-              🎉 Bạn đã câu được: {caughtFish.icon} <strong>{caughtFish.name}</strong> ({caughtFish.rarity})!
-            </div>
-          )}
+        <div className="text-center max-w-md mx-auto py-4">
+          <h3 className="font-bold text-lg mb-4">🎣 Câu Cá Bên Suối</h3>
+          <GameVisual imgUrl={db.settings.gameImages.fishing} emoji={status === "idle" ? "🌊" : (status==="waiting" ? "🎣..." : "❗🐟❗")} />
+          {status === "idle" && <button onClick={castRod} className="px-6 py-2.5 bg-sky-600 text-white font-bold rounded-2xl">Thả Cần Câu 🎣</button>}
+          {status === "waiting" && <button onClick={() => setStatus("idle")} className="px-6 py-2.5 bg-slate-500 text-white font-bold rounded-2xl">Thu Cần Lại</button>}
+          {status === "bite" && <button onClick={pullRod} className="px-8 py-3 bg-rose-600 text-white font-extrabold rounded-2xl animate-pulse">GIẬT CẦN NGAY!</button>}
         </div>
       );
     }
 
-    // GAME 3: VƯỜN SAO
-    function StarGardenGame({ addLoc, notify, isDark }) {
+    // GAME 3
+    function StarGardenGame({ db, setDb, addLoc, notify }) {
       const [stars, setStars] = useState([]);
-      const [name, setName] = useState("");
-
-      const addStar = (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        setStars(prev => [...prev, { x, y }]);
-      };
-
       const saveConstellation = () => {
-        if (stars.length < 3) {
-          notify("Cần ít nhất 3 ngôi sao để tạo thành một chòm sao!");
-          return;
-        }
-        addLoc(20, `Tạo chòm sao "${name || "Chòm Mèo Lười"}"`);
+        if (db.user.daily.star >= 1) return notify("Mỗi đêm chỉ đặt tên được 1 chòm sao thôi! ✨");
+        if (stars.length < 3) return notify("Cần nối ít nhất 3 sao!");
+        addLoc(db.settings.rewards.star, "Tạo chòm sao mới");
+        setDb(prev => ({ ...prev, user: { ...prev.user, daily: { ...prev.user.daily, star: 1 } } }));
         setStars([]);
-        setName("");
       };
-
       return (
-        <div className="space-y-4 max-w-lg mx-auto py-2">
-          <div className="text-center">
-            <h3 className="font-bold text-lg">🌙 Vườn Sao & Chòm Sao</h3>
-            <p className="text-xs opacity-75">Nhấp chuột vào bầu trời đêm để đặt và nối các ngôi sao</p>
+        <div className="max-w-md mx-auto py-2 text-center">
+          <h3 className="font-bold text-lg mb-2">🌙 Vườn Sao Ban Đêm</h3>
+          {db.settings.gameImages.star ? <img src={db.settings.gameImages.star} className="w-full h-32 object-cover rounded-xl mb-4" /> : null}
+          <div onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setStars([...stars, {x: e.clientX-r.left, y: e.clientY-r.top}]); }} className="h-48 bg-slate-950 rounded-2xl relative cursor-crosshair mb-4 border border-slate-700">
+            {stars.map((s, i) => <div key={i} style={{left: s.x, top: s.y}} className="absolute text-yellow-300 text-xs animate-ping">⭐</div>)}
+            {stars.length===0 && <span className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs">Nhấp để đặt sao...</span>}
           </div>
-          <div
-            onClick={addStar}
-            className="h-60 bg-slate-950 rounded-2xl relative cursor-crosshair overflow-hidden border border-slate-800 shadow-inner"
-          >
-            {stars.map((s, idx) => (
-              <div key={idx} style={{ left: s.x - 6, top: s.y - 6 }} className="absolute text-yellow-300 text-xs animate-ping">
-                ⭐
-              </div>
-            ))}
-            {stars.length === 0 && (
-              <span className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 pointer-events-none">
-                Nhấp vào đây để đặt ngôi sao đầu tiên...
-              </span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Đặt tên chòm sao (VD: Chòm Mèo Ngủ...)"
-              className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent"
-            />
-            <button onClick={saveConstellation} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow">
-              Lưu Chòm Sao ✨
-            </button>
-          </div>
+          <button onClick={saveConstellation} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl">Lưu Chòm Sao ✨</button>
         </div>
       );
     }
 
-    // GAME 4: NHẬT KÝ
+    // GAME 4
     function DiaryGame({ db, setDb, addLoc, notify }) {
       const [input, setInput] = useState("");
-      const [isPublic, setIsPublic] = useState(true);
-
-      const submitDiary = (e) => {
+      const submit = (e) => {
         e.preventDefault();
-        if (!input.trim()) return;
-        const newEntry = {
-          id: Date.now(),
-          author: db.user.name,
-          text: input.trim(),
-          isPublic,
-          reacts: { leaf: 1, tea: 1, flower: 1, moon: 1 }
-        };
+        if (db.user.daily.diary >= 1) return notify("Mỗi ngày chỉ viết nhật ký 1 lần thôi nhé! 📖");
+        if(!input.trim()) return;
         setDb(prev => ({
           ...prev,
           user: {
             ...prev.user,
-            diaryEntries: [newEntry, ...prev.user.diaryEntries]
+            daily: { ...prev.user.daily, diary: 1 },
+            diaryEntries: [{ id: Date.now(), author: db.user.name, text: input.trim() }, ...prev.user.diaryEntries]
           }
         }));
-        addLoc(15, "Viết dòng nhật ký hôm nay");
+        addLoc(db.settings.rewards.diary, "Viết nhật ký");
         setInput("");
       };
-
       return (
-        <div className="max-w-xl mx-auto space-y-5 py-2">
-          <div className="text-center">
-            <h3 className="font-bold text-lg">📖 Nhật Ký Nhà Trọ</h3>
-            <p className="text-xs opacity-75">Hôm nay điều gì đã khiến bạn cảm thấy bình yên mỉm cười?</p>
-          </div>
-          <form onSubmit={submitDiary} className="space-y-3">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Gửi gắm vài dòng tâm sự..."
-              className="w-full h-24 p-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <div className="flex justify-between items-center">
-              <label className="text-xs flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
-                <span>Chia sẻ công khai với Quán Trọ</span>
-              </label>
-              <button type="submit" className="px-5 py-1.5 bg-emerald-600 dark:bg-indigo-600 text-white text-xs font-bold rounded-xl shadow">
-                Lưu Dòng Ký Ức 🍃
-              </button>
-            </div>
+        <div className="max-w-xl mx-auto py-2">
+          <h3 className="font-bold text-lg text-center mb-4">📖 Nhật Ký Nhà Trọ</h3>
+          {db.settings.gameImages.diary && <img src={db.settings.gameImages.diary} className="w-32 h-32 mx-auto object-cover rounded-2xl mb-4" />}
+          <form onSubmit={submit} className="space-y-3">
+            <textarea value={input} onChange={(e) => setInput(e.target.value)} placeholder="Tâm sự đôi lời (Tác giả: Khách)..." className="w-full h-24 p-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+            <button type="submit" className="px-5 py-2 bg-emerald-600 text-white font-bold rounded-xl">Lưu Ký Ức 🍃</button>
           </form>
-
-          {/* Public Entries */}
-          <div className="space-y-3 pt-3 border-t border-black/5 dark:border-white/5 max-h-56 overflow-y-auto">
-            {db.user.diaryEntries.map(entry => (
-              <div key={entry.id} className="p-3 rounded-xl bg-black/5 dark:bg-white/5 text-xs space-y-1.5">
-                <div className="flex justify-between font-bold opacity-80 text-[11px]">
-                  <span>{entry.author}</span>
-                  <span>{entry.isPublic ? "Công khai 🌍" : "Riêng tư 🔒"}</span>
-                </div>
-                <p>{entry.text}</p>
-                {entry.isPublic && (
-                  <div className="flex gap-3 text-[11px] pt-1">
-                    <button onClick={() => notify("Đã gửi đồng cảm 🍃")} className="hover:scale-110">🍃 {entry.reacts?.leaf || 0}</button>
-                    <button onClick={() => notify("Đã gửi ly trà ☕")} className="hover:scale-110">☕ {entry.reacts?.tea || 0}</button>
-                    <button onClick={() => notify("Đã gửi nhành hoa 🌸")} className="hover:scale-110">🌸 {entry.reacts?.flower || 0}</button>
-                    <button onClick={() => notify("Đã chạm lòng 🌙")} className="hover:scale-110">🌙 {entry.reacts?.moon || 0}</button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
         </div>
       );
     }
 
-    // GAME 5: MỘT CÂU CHUYỆN
+    // GAME 5
     function StoryGame({ db, setDb, addLoc, notify }) {
-      const [storyInput, setStoryInput] = useState("");
-
-      const handleAddLine = (e) => {
+      const [input, setInput] = useState("");
+      const submit = (e) => {
         e.preventDefault();
-        if (!storyInput.trim()) return;
-        const newChap = { id: Date.now(), author: db.user.name, text: storyInput.trim() };
+        if (db.user.daily.story >= 1) return notify("Hôm nay bạn đã nối truyện rồi, nhường cho khách khác nhé! 📜");
+        if(!input.trim()) return;
         setDb(prev => ({
           ...prev,
-          user: { ...prev.user, storyChapters: [...prev.user.storyChapters, newChap] }
+          user: {
+            ...prev.user,
+            daily: { ...prev.user.daily, story: 1 },
+            storyChapters: [...prev.user.storyChapters, { id: Date.now(), author: db.user.name, text: input.trim() }]
+          }
         }));
-        addLoc(10, "Viết tiếp câu chuyện");
-        setStoryInput("");
+        addLoc(db.settings.rewards.story, "Nối tiếp câu chuyện");
+        setInput("");
       };
-
       return (
-        <div className="max-w-xl mx-auto space-y-4 py-2">
-          <div className="text-center">
-            <h3 className="font-bold text-lg">📜 Câu Chuyện Nối Tiếp</h3>
-            <p className="text-xs opacity-75">Cùng nhau viết nên những mẩu chuyện kỳ diệu tại Quán Trọ</p>
+        <div className="max-w-xl mx-auto py-2">
+          <h3 className="font-bold text-lg text-center mb-4">📜 Câu Chuyện Nối Tiếp</h3>
+          {db.settings.gameImages.story && <img src={db.settings.gameImages.story} className="w-32 h-32 mx-auto object-cover rounded-2xl mb-4" />}
+          <div className="h-40 p-4 rounded-xl bg-black/5 dark:bg-white/5 overflow-y-auto space-y-2 text-xs mb-3">
+            {db.user.storyChapters.map(c => <p key={c.id}><strong className="text-emerald-700 dark:text-indigo-400">[{c.author}]:</strong> {c.text}</p>)}
           </div>
-          <div className="h-44 p-4 rounded-xl bg-black/5 dark:bg-white/5 overflow-y-auto space-y-2 text-xs leading-relaxed">
-            {db.user.storyChapters.map(c => (
-              <p key={c.id}>
-                <strong className="text-emerald-700 dark:text-indigo-400">[{c.author}]:</strong> {c.text}
-              </p>
-            ))}
-          </div>
-          <form onSubmit={handleAddLine} className="flex gap-2">
-            <input
-              value={storyInput}
-              onChange={(e) => setStoryInput(e.target.value)}
-              placeholder="Viết tiếp một câu cho câu chuyện..."
-              className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent"
-            />
-            <button type="submit" className="px-4 py-2 bg-emerald-600 dark:bg-indigo-600 text-white text-xs font-bold rounded-xl shadow">
-              Viết Tiếp ✍️
-            </button>
+          <form onSubmit={submit} className="flex gap-2">
+            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Viết câu tiếp theo..." className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+            <button type="submit" className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl">Viết Tiếp ✍️</button>
           </form>
         </div>
       );
     }
 
-    // GAME 6: CÂU ĐỐ NHỎ
-    function QuizGame({ addLoc, notify }) {
-      const [answered, setAnswered] = useState(false);
+    // GAME 6
+    function QuizGame({ db, setDb, addLoc, notify }) {
+      // Pick daily question based on date
+      const quizIndex = new Date().getDate() % (db.quizzes.length || 1);
+      const quiz = db.quizzes[quizIndex];
 
-      const handleAnswer = (isCorrect) => {
-        if (answered) return;
-        setAnswered(true);
-        if (isCorrect) {
-          addLoc(20, "Giải đúng câu đố!");
+      const handleAnswer = (idx) => {
+        if (db.user.daily.quiz >= 1) return notify("Bạn đã trả lời câu hỏi hôm nay rồi! 🧩");
+        setDb(prev => ({ ...prev, user: { ...prev.user, daily: { ...prev.user.daily, quiz: 1 } } }));
+        if (idx === quiz.correctIndex) {
+          addLoc(db.settings.rewards.quiz, "Trả lời đúng câu hỏi!");
         } else {
-          notify("Chưa đúng rồi, hẹn bạn câu sau nhé!");
+          notify("Sai mất rồi, hẹn bạn câu hỏi ngày mai nhé!");
         }
       };
 
       return (
-        <div className="text-center max-w-md mx-auto space-y-4 py-4">
-          <h3 className="font-bold text-lg">🧩 Câu Đố Vui Quán Trọ</h3>
-          <p className="text-xs font-medium">"Loài hoa nào thường nở rộ báo hiệu mùa xuân về bên hiên nhà gỗ?"</p>
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            {["Hoa Cúc Họa Mi", "Hoa Mai Vàng & Đào", "Hoa Hướng Dương", "Hoa Bồ Công Anh"].map((opt, idx) => (
-              <button
-                key={idx}
-                disabled={answered}
-                onClick={() => handleAnswer(idx === 1)}
-                className="p-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all"
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-          {answered && <p className="text-xs text-emerald-600 font-bold">Đáp án chính xác: Hoa Mai Vàng & Đào! ✨</p>}
+        <div className="text-center max-w-md mx-auto py-4">
+          <h3 className="font-bold text-lg mb-4">🧩 Câu Đố Mỗi Ngày</h3>
+          {db.settings.gameImages.quiz && <img src={db.settings.gameImages.quiz} className="w-32 h-32 mx-auto object-cover rounded-2xl mb-4" />}
+          {quiz ? (
+            <>
+              <p className="text-sm font-bold mb-4">Q: {quiz.question || quiz.title}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {quiz.options.map((opt, idx) => (
+                  <button key={idx} onClick={() => handleAnswer(idx)} className="p-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5">
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : <p>Chưa có câu đố nào!</p>}
         </div>
       );
     }
 
-    // GAME 7: PHA TRÀ
+    // GAME 7
     function TeaGame({ db, setDb, addLoc, notify }) {
-      const [selectedIngredients, setSelectedIngredients] = useState([]);
-
-      const ingredients = ["Trà Xanh 🍃", "Hoa Cúc 🌼", "Mật Ong 🍯", "Chanh 🍋", "Bạc Hà 🌿"];
-
-      const toggleIng = (ing) => {
-        setSelectedIngredients(prev =>
-          prev.includes(ing) ? prev.filter(i => i !== ing) : [...prev, ing]
-        );
+      const [ings, setIngs] = useState([]);
+      const brew = () => {
+        if (db.user.daily.tea >= 1) return notify("Hôm nay đã pha trà rồi, uống nhiều mất ngủ đó! 🍵");
+        if (ings.length < 2) return notify("Chọn ít nhất 2 nguyên liệu!");
+        addLoc(db.settings.rewards.tea, "Pha trà chiều");
+        setDb(prev => ({ ...prev, user: { ...prev.user, daily: { ...prev.user.daily, tea: 1 } } }));
+        setIngs([]);
       };
-
-      const brewTea = () => {
-        if (selectedIngredients.length < 2) {
-          notify("Cần ít nhất 2 nguyên liệu để pha ấm trà ngon!");
-          return;
-        }
-        const teaName = "Trà " + selectedIngredients.map(i => i.split(" ")[0]).join(" ");
-        addLoc(20, `Pha thành công ${teaName}`);
-        setSelectedIngredients([]);
-      };
-
       return (
-        <div className="text-center max-w-md mx-auto space-y-4 py-4">
-          <h3 className="font-bold text-lg">🍵 Góc Pha Trà Chiều</h3>
-          <p className="text-xs opacity-75">Chọn các nguyên liệu để sáng tạo nên hương vị trà mới</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {ingredients.map((ing, idx) => (
-              <button
-                key={idx}
-                onClick={() => toggleIng(ing)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
-                  selectedIngredients.includes(ing)
-                    ? "bg-amber-600 text-white border-amber-600 shadow"
-                    : "border-slate-300 dark:border-slate-700"
-                }`}
-              >
+        <div className="text-center max-w-md mx-auto py-4">
+          <h3 className="font-bold text-lg mb-4">🍵 Góc Pha Trà Chiều</h3>
+          <GameVisual imgUrl={db.settings.gameImages.tea} emoji="🫖" />
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            {["🍃 Trà Xanh", "🌼 Hoa Cúc", "🍯 Mật Ong", "🍋 Chanh"].map(ing => (
+              <button key={ing} onClick={() => setIngs(prev => prev.includes(ing) ? prev.filter(i=>i!==ing) : [...prev, ing])} className={`px-3.5 py-2 rounded-xl text-xs font-bold border ${ings.includes(ing) ? "bg-amber-600 text-white" : "border-slate-300"}`}>
                 {ing}
               </button>
             ))}
           </div>
-          <button
-            onClick={brewTea}
-            className="px-6 py-2.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-bold rounded-2xl shadow-lg"
-          >
-            Ủ Trà Ngay 🍵 (+20 🍀)
-          </button>
+          <button onClick={brew} className="px-6 py-2.5 bg-amber-700 text-white font-bold rounded-2xl">Ủ Trà Ngay</button>
         </div>
       );
     }
 
     // ==========================================
-    // MODULE 4: SHOP & ACHIEVEMENTS VIEW
+    // SHOP VIEW (Read Only for Users, Prices from DB)
     // ==========================================
-    function ShopView({ db, setDb, notify, cardBg, isDark }) {
-      const [category, setCategory] = useState("Tất cả");
-
-      const categories = ["Tất cả", "Nội thất", "Sân vườn", "Cây cối", "Thú cưng", "Hiệu ứng"];
-
-      const buyItem = (item) => {
-        if (db.user.loc < item.price) {
-          notify("Bạn không đủ Lộc để mua vật phẩm này!");
-          return;
-        }
-        setDb(prev => ({
-          ...prev,
-          user: {
-            ...prev.user,
-            loc: prev.user.loc - item.price,
-            houseItems: [...prev.user.houseItems, item.id]
-          }
-        }));
-        notify(`Mua thành công ${item.name}! Đã chuyển về nhà riêng 🏡`);
-      };
-
-      const filteredItems = category === "Tất cả"
-        ? db.shopItems
-        : db.shopItems.filter(i => i.category === category);
-
+    function ShopView({ db, setDb, notify, cardBg }) {
       return (
-        <div className="space-y-8">
-          {/* Shop Header */}
-          <div className={`p-6 rounded-3xl border ${cardBg} flex justify-between items-center`}>
-            <div>
-              <h2 className="text-xl font-black flex items-center gap-2">
-                <span>🛍️</span>
-                <span>Cửa Hàng Nhà Trọ</span>
-              </h2>
-              <p className="text-xs opacity-75">Sưu tầm các món đồ decor xinh xắn cho căn nhà của bạn</p>
-            </div>
-            <div className="px-4 py-2 bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-2xl text-xs font-black">
-              Số dư: 🍀 {db.user.loc} Lộc
-            </div>
+        <div className={`p-6 rounded-3xl border ${cardBg}`}>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-black">🛍️ Cửa Hàng</h2>
+            <div className="px-4 py-2 bg-emerald-500/20 text-emerald-800 font-black rounded-xl">Số dư: 🍀 {db.user.loc}</div>
           </div>
-
-          {/* Categories */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  category === cat
-                    ? (isDark ? "bg-indigo-600 text-white" : "bg-emerald-600 text-white")
-                    : "bg-black/5 dark:bg-white/5 opacity-75"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Item Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {filteredItems.map(item => (
-              <div key={item.id} className={`p-4 rounded-2xl border ${cardBg} flex flex-col justify-between items-center text-center space-y-3`}>
-                <span className="text-4xl">{item.icon}</span>
-                <div>
-                  <h4 className="font-bold text-xs line-clamp-1">{item.name}</h4>
-                  <span className="text-[10px] opacity-60">Loại: {item.category}</span>
-                </div>
-                <button
-                  onClick={() => buyItem(item)}
-                  className="w-full py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold rounded-xl shadow active:scale-95 transition-transform flex items-center justify-center gap-1"
-                >
-                  <span>🍀 {item.price} Lộc</span>
-                </button>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {db.shopItems.map(item => (
+              <div key={item.id} className="p-4 rounded-xl border border-black/5 dark:border-white/5 text-center">
+                <span className="text-4xl block mb-2">{item.icon}</span>
+                <h4 className="font-bold text-xs">{item.name}</h4>
+                <button className="mt-3 w-full py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg">Mua: {item.price} 🍀</button>
               </div>
             ))}
           </div>
-
-          {/* BẢNG THÀNH TỰU */}
-          <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5">
-            <h3 className="font-bold text-base flex items-center gap-2">
-              <span>🏆</span>
-              <span>Bảng Thành Tựu Khách Quen</span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {db.achievements.map(ach => (
-                <div key={ach.id} className={`p-4 rounded-2xl border ${cardBg} flex items-center gap-3`}>
-                  <span className="text-3xl">{ach.icon}</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-xs">{ach.title}</h4>
-                    <p className="text-[10px] opacity-70">{ach.desc}</p>
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-indigo-400 mt-1 block">
-                      Thưởng: +{ach.reward} 🍀
-                    </span>
-                  </div>
-                  <span className="text-xs">{ach.unlocked ? "✅" : "🔒"}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       );
     }
 
     // ==========================================
-    // MODULE 5: ADMIN MANAGEMENT DASHBOARD
+    // ADMIN VIEW (FULL CRUD, NO PLACEHOLDERS)
     // ==========================================
-    function AdminView({ db, setDb, notify, cardBg, isDark }) {
-      const [activeAdminTab, setActiveAdminTab] = useState("rooms");
+    function AdminView({ db, setDb, notify, cardBg }) {
+      const [tab, setTab] = useState("rooms"); // rooms | music | quiz | config
+      
+      // FORM STATES - ROOMS
+      const [editingRoomId, setEditingRoomId] = useState(null);
+      const [rName, setRName] = useState(""); const [rImg, setRImg] = useState(""); const [rTags, setRTags] = useState("");
+      const [rNote, setRNote] = useState(""); const [rIdea, setRIdea] = useState(""); const [rLink, setRLink] = useState("");
+      const [rPin, setRPin] = useState(0); const [rDone, setRDone] = useState(false);
 
-      // Room Form State
-      const [roomName, setRoomName] = useState("");
-      const [roomImage, setRoomImage] = useState("");
-      const [roomTags, setRoomTags] = useState("");
-      const [roomNote, setRoomNote] = useState("");
-      const [roomIdea, setRoomIdea] = useState("");
-      const [roomPin, setRoomPin] = useState(0);
-      const [roomCompleted, setRoomCompleted] = useState(false);
-      const [roomLink, setRoomLink] = useState("");
-
-      // Music Form State
-      const [songTitle, setSongTitle] = useState("");
-      const [songArtist, setSongArtist] = useState("");
-      const [songUrl, setSongUrl] = useState("");
-
-      const handleAddRoom = (e) => {
+      const loadRoom = (r) => {
+        setEditingRoomId(r.id); setRName(r.name); setRImg(r.image); setRTags(r.tags.join(", "));
+        setRNote(r.note); setRIdea(r.idea); setRLink(r.link || ""); setRPin(r.pinRank); setRDone(r.isCompleted);
+      };
+      
+      const saveRoom = (e) => {
         e.preventDefault();
-        if (!roomName.trim()) return;
-        const newRoom = {
-          id: Date.now(),
-          name: roomName,
-          image: roomImage || "https://picsum.photos/seed/" + Date.now() + "/600/400",
-          tags: roomTags.split(",").map(t => t.trim()).filter(Boolean),
-          note: roomNote,
-          idea: roomIdea,
-          pinRank: Number(roomPin),
-          isCompleted: roomCompleted,
-          link: roomLink,
-          votes: 0,
-          createdAt: Date.now()
+        const payload = {
+          id: editingRoomId || Date.now(),
+          name: rName, image: rImg, tags: rTags.split(",").map(t=>t.trim()), note: rNote, idea: rIdea,
+          link: rLink, pinRank: Number(rPin), isCompleted: rDone,
+          votes: editingRoomId ? db.rooms.find(x=>x.id===editingRoomId).votes : 0,
+          createdAt: editingRoomId ? db.rooms.find(x=>x.id===editingRoomId).createdAt : Date.now()
         };
-        setDb(prev => ({ ...prev, rooms: [newRoom, ...prev.rooms] }));
-        notify("Thêm phòng mới thành công!");
-        setRoomName(""); setRoomImage(""); setRoomTags(""); setRoomNote(""); setRoomIdea(""); setRoomLink("");
+        if(rDone && !rLink.trim()) return notify("Phòng đã hoàn thành bắt buộc phải có Link!");
+        
+        setDb(prev => ({
+          ...prev,
+          rooms: editingRoomId ? prev.rooms.map(x => x.id === editingRoomId ? payload : x) : [...prev.rooms, payload]
+        }));
+        notify(editingRoomId ? "Cập nhật phòng thành công!" : "Thêm phòng thành công!");
+        setEditingRoomId(null); setRName(""); setRImg(""); setRTags(""); setRNote(""); setRIdea(""); setRLink(""); setRPin(0); setRDone(false);
       };
 
-      const handleDeleteRoom = (id) => {
-        setDb(prev => ({ ...prev, rooms: prev.rooms.filter(r => r.id !== id) }));
-        notify("Đã xóa phòng!");
-      };
-
-      const handleAddSong = (e) => {
+      // FORM STATES - MUSIC
+      const [editingSongId, setEditingSongId] = useState(null);
+      const [sTitle, setSTitle] = useState(""); const [sArtist, setSArtist] = useState(""); const [sUrl, setSUrl] = useState("");
+      const loadSong = (s) => { setEditingSongId(s.id); setSTitle(s.title); setSArtist(s.artist); setSUrl(s.url); };
+      const saveSong = (e) => {
         e.preventDefault();
-        if (!songTitle || !songUrl) return;
-        const newSong = { id: Date.now(), title: songTitle, artist: songArtist || "Admin", url: songUrl };
-        setDb(prev => ({ ...prev, songs: [...prev.songs, newSong] }));
-        notify("Đã tải bài hát mới lên hệ thống!");
-        setSongTitle(""); setSongArtist(""); setSongUrl("");
+        const payload = { id: editingSongId || Date.now(), title: sTitle, artist: sArtist, url: sUrl };
+        setDb(prev => ({
+          ...prev, songs: editingSongId ? prev.songs.map(x=>x.id===editingSongId ? payload:x) : [...prev.songs, payload]
+        }));
+        notify("Lưu nhạc thành công!"); setEditingSongId(null); setSTitle(""); setSArtist(""); setSUrl("");
       };
 
-      const handleDeleteSong = (id) => {
-        setDb(prev => ({ ...prev, songs: prev.songs.filter(s => s.id !== id) }));
-        notify("Đã gỡ bài hát!");
+      // FORM STATES - QUIZZES
+      const [editingQuizId, setEditingQuizId] = useState(null);
+      const [qText, setQText] = useState(""); const [qOpts, setQOpts] = useState(""); const [qAns, setQAns] = useState(0);
+      const loadQuiz = (q) => { setEditingQuizId(q.id); setQText(q.question || q.title); setQOpts(q.options.join(" | ")); setQAns(q.correctIndex); };
+      const saveQuiz = (e) => {
+        e.preventDefault();
+        const payload = { id: editingQuizId || Date.now(), question: qText, options: qOpts.split("|").map(t=>t.trim()), correctIndex: Number(qAns) };
+        setDb(prev => ({
+          ...prev, quizzes: editingQuizId ? prev.quizzes.map(x=>x.id===editingQuizId ? payload:x) : [...prev.quizzes, payload]
+        }));
+        notify("Lưu câu hỏi thành công!"); setEditingQuizId(null); setQText(""); setQOpts(""); setQAns(0);
+      };
+
+      // SETTINGS (Shop Prices, Rewards, Images)
+      const saveSettings = (e) => {
+        e.preventDefault();
+        // Uses refs or just straight form submit via elements, to avoid 50 state variables.
+        const fd = new FormData(e.target);
+        
+        // Build updated shop
+        const updatedShop = db.shopItems.map(item => ({ ...item, price: Number(fd.get(`shop_${item.id}`)) }));
+        
+        // Build updated rewards
+        const rw = { ...db.settings.rewards };
+        ["water", "star", "diary", "story", "quiz", "tea", "lostItem"].forEach(k => rw[k] = Number(fd.get(`rw_${k}`)));
+        
+        // Build updated images
+        const imgs = { ...db.settings.gameImages };
+        ["garden", "fishing", "star", "diary", "story", "quiz", "tea"].forEach(k => imgs[k] = fd.get(`img_${k}`));
+
+        setDb(prev => ({
+          ...prev,
+          shopItems: updatedShop,
+          settings: { ...prev.settings, rewards: rw, gameImages: imgs }
+        }));
+        notify("Lưu toàn bộ Cấu hình Hệ thống thành công!");
       };
 
       return (
         <div className="space-y-6">
-          <div className={`p-6 rounded-3xl border ${cardBg} flex justify-between items-center`}>
-            <div>
-              <h2 className="text-xl font-black">⚙️ Quản Trị Hệ Thống (Admin Panel)</h2>
-              <p className="text-xs opacity-75">Toàn quyền thêm, sửa, xóa phòng, bài hát và quản lý Lộc</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveAdminTab("rooms")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl ${activeAdminTab === 'rooms' ? 'bg-emerald-600 text-white' : 'bg-black/5 dark:bg-white/5'}`}
-              >
-                Quản lý Phòng
-              </button>
-              <button
-                onClick={() => setActiveAdminTab("music")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl ${activeAdminTab === 'music' ? 'bg-emerald-600 text-white' : 'bg-black/5 dark:bg-white/5'}`}
-              >
-                Quản lý Nhạc
-              </button>
-            </div>
+          {/* Admin Header Tabs */}
+          <div className={`p-4 rounded-3xl border ${cardBg} flex gap-2 overflow-x-auto`}>
+            <button onClick={()=>setTab('rooms')} className={`px-4 py-2 font-bold rounded-xl text-xs whitespace-nowrap ${tab==='rooms' ? 'bg-emerald-600 text-white' : 'bg-black/5'}`}>Phòng (Rooms)</button>
+            <button onClick={()=>setTab('music')} className={`px-4 py-2 font-bold rounded-xl text-xs whitespace-nowrap ${tab==='music' ? 'bg-emerald-600 text-white' : 'bg-black/5'}`}>Nhạc (Music)</button>
+            <button onClick={()=>setTab('quiz')} className={`px-4 py-2 font-bold rounded-xl text-xs whitespace-nowrap ${tab==='quiz' ? 'bg-emerald-600 text-white' : 'bg-black/5'}`}>Câu đố (Quiz)</button>
+            <button onClick={()=>setTab('config')} className={`px-4 py-2 font-bold rounded-xl text-xs whitespace-nowrap ${tab==='config' ? 'bg-emerald-600 text-white' : 'bg-black/5'}`}>Cấu hình (Thưởng/Ảnh/Giá)</button>
           </div>
 
-          {activeAdminTab === "rooms" ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Form Add Room */}
-              <form onSubmit={handleAddRoom} className={`p-6 rounded-3xl border ${cardBg} space-y-3`}>
-                <h3 className="font-bold text-sm">Thêm Phòng Nghỉ Mới</h3>
-                <input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder="Tên phòng *" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
-                <input value={roomImage} onChange={(e) => setRoomImage(e.target.value)} placeholder="Link ảnh phòng (URL)" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
-                <input value={roomTags} onChange={(e) => setRoomTags(e.target.value)} placeholder="Tags (cách nhau bằng dấu phẩy)" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
-                <input value={roomNote} onChange={(e) => setRoomNote(e.target.value)} placeholder="Ghi chú phòng" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
-                <textarea value={roomIdea} onChange={(e) => setRoomIdea(e.target.value)} placeholder="Ý tưởng thiết kế" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent h-16" />
-                
-                <div className="flex gap-2">
-                  <select value={roomPin} onChange={(e) => setRoomPin(e.target.value)} className="w-1/2 p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent">
-                    <option value={0}>Không ghim</option>
-                    <option value={1}>Ghim Top 1</option>
-                    <option value={2}>Ghim Top 2</option>
-                    <option value={3}>Ghim Top 3</option>
-                  </select>
-                  <label className="w-1/2 flex items-center text-xs gap-1 cursor-pointer">
-                    <input type="checkbox" checked={roomCompleted} onChange={(e) => setRoomCompleted(e.target.checked)} />
-                    <span>Đã hoàn thành</span>
-                  </label>
-                </div>
-
-                {roomCompleted && (
-                  <input value={roomLink} onChange={(e) => setRoomLink(e.target.value)} placeholder="Link dẫn tới phòng hoàn thành *" required className="w-full p-2 text-xs rounded-xl border border-emerald-500 bg-transparent" />
-                )}
-
-                <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">
-                  + Đăng Phòng Mới
-                </button>
-              </form>
-
-              {/* Room Management List */}
-              <div className="lg:col-span-2 space-y-3">
-                <h3 className="font-bold text-sm">Danh Sách Phòng Hiện Có ({db.rooms.length})</h3>
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {db.rooms.map(room => (
-                    <div key={room.id} className={`p-3 rounded-2xl border ${cardBg} flex justify-between items-center text-xs`}>
-                      <div className="flex items-center gap-3">
-                        <img src={room.image} className="w-12 h-12 object-cover rounded-xl" />
-                        <div>
-                          <p className="font-bold">{room.name} {room.pinRank > 0 && `(📌 Top ${room.pinRank})`}</p>
-                          <p className="opacity-60 text-[10px]">{room.isCompleted ? "✓ Đã xong" : "Đang thi công"} • {room.votes} vote</p>
-                        </div>
-                      </div>
-                      <button onClick={() => handleDeleteRoom(room.id)} className="text-rose-500 font-bold px-3 py-1 bg-rose-500/10 rounded-lg hover:bg-rose-500/20">
-                        Xóa
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* MUSIC MANAGEMENT */
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <form onSubmit={handleAddSong} className={`p-6 rounded-3xl border ${cardBg} space-y-3`}>
-                <h3 className="font-bold text-sm">Thêm Bài Hát Mới</h3>
-                <input value={songTitle} onChange={(e) => setSongTitle(e.target.value)} placeholder="Tên bài hát *" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
-                <input value={songArtist} onChange={(e) => setSongArtist(e.target.value)} placeholder="Tên ca sĩ / Nhạc sĩ" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
-                <input value={songUrl} onChange={(e) => setSongUrl(e.target.value)} placeholder="Link MP3 trực tiếp *" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
-                <button type="submit" className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow">
-                  + Tải Nhạc Lên
-                </button>
-              </form>
-
-              <div className="lg:col-span-2 space-y-3">
-                <h3 className="font-bold text-sm">Playlist Quán Trọ ({db.songs.length})</h3>
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {db.songs.map(song => (
-                    <div key={song.id} className={`p-3 rounded-2xl border ${cardBg} flex justify-between items-center text-xs`}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* 1. ROOMS TAB */}
+            {tab === "rooms" && (
+              <>
+                <form onSubmit={saveRoom} className={`p-6 rounded-3xl border ${cardBg} space-y-3`}>
+                  <h3 className="font-bold text-sm text-emerald-600">{editingRoomId ? "Sửa Phòng" : "Thêm Phòng Mới"}</h3>
+                  <input value={rName} onChange={e=>setRName(e.target.value)} placeholder="Tên phòng *" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  <input value={rImg} onChange={e=>setRImg(e.target.value)} placeholder="Link ảnh (URL)" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  <input value={rTags} onChange={e=>setRTags(e.target.value)} placeholder="Tags (Cúc, Hoa, Gỗ...)" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  <textarea value={rNote} onChange={e=>setRNote(e.target.value)} placeholder="Ghi chú" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent h-12" />
+                  <textarea value={rIdea} onChange={e=>setRIdea(e.target.value)} placeholder="Ý tưởng thiết kế" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent h-12" />
+                  
+                  <div className="flex gap-2">
+                    <select value={rPin} onChange={e=>setRPin(e.target.value)} className="flex-1 p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent">
+                      <option value={0}>Không ghim</option><option value={1}>Top 1</option><option value={2}>Top 2</option><option value={3}>Top 3</option>
+                    </select>
+                    <label className="flex-1 flex items-center gap-1 text-xs font-bold text-emerald-600 cursor-pointer">
+                      <input type="checkbox" checked={rDone} onChange={e=>setRDone(e.target.checked)} /> Đã hoàn thành
+                    </label>
+                  </div>
+                  {rDone && <input value={rLink} onChange={e=>setRLink(e.target.value)} placeholder="Nhập Link dẫn tới phòng (Bắt buộc) *" required className="w-full p-2 text-xs rounded-xl border border-emerald-500 bg-transparent" />}
+                  <div className="flex gap-2">
+                    {editingRoomId && <button type="button" onClick={()=>{setEditingRoomId(null); setRName("");}} className="flex-1 py-2 bg-slate-500 text-white rounded-xl text-xs font-bold">Hủy Sửa</button>}
+                    <button type="submit" className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">{editingRoomId ? "Lưu Phòng" : "+ Thêm"}</button>
+                  </div>
+                </form>
+                <div className="lg:col-span-2 space-y-2 max-h-[500px] overflow-y-auto">
+                  {db.rooms.map(r => (
+                    <div key={r.id} className={`p-3 rounded-xl border ${cardBg} flex justify-between items-center`}>
                       <div>
-                        <p className="font-bold">{song.title}</p>
-                        <p className="opacity-60 text-[10px]">{song.artist}</p>
+                        <p className="font-bold text-sm">{r.name} {r.pinRank > 0 && `(Top ${r.pinRank})`}</p>
+                        <p className="text-[10px] opacity-70">{r.isCompleted ? `✓ Có link: ${r.link}` : "Đang thi công"}</p>
                       </div>
-                      <button onClick={() => handleDeleteSong(song.id)} className="text-rose-500 font-bold px-3 py-1 bg-rose-500/10 rounded-lg hover:bg-rose-500/20">
-                        Gỡ
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={()=>loadRoom(r)} className="text-xs px-3 py-1 bg-sky-500/10 text-sky-600 font-bold rounded-lg">Sửa</button>
+                        <button onClick={()=>setDb(p=>({...p, rooms: p.rooms.filter(x=>x.id!==r.id)}))} className="text-xs px-3 py-1 bg-rose-500/10 text-rose-600 font-bold rounded-lg">Xóa</button>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+
+            {/* 2. MUSIC TAB */}
+            {tab === "music" && (
+              <>
+                <form onSubmit={saveSong} className={`p-6 rounded-3xl border ${cardBg} space-y-3`}>
+                  <h3 className="font-bold text-sm text-indigo-600">{editingSongId ? "Sửa Bài Hát" : "Thêm Bài Hát"}</h3>
+                  <input value={sTitle} onChange={e=>setSTitle(e.target.value)} placeholder="Tên bài hát *" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  <input value={sArtist} onChange={e=>setSArtist(e.target.value)} placeholder="Ca sĩ" className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  <input value={sUrl} onChange={e=>setSUrl(e.target.value)} placeholder="Link MP3 trực tiếp *" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  <button type="submit" className="w-full py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">{editingSongId ? "Lưu" : "+ Thêm Nhạc"}</button>
+                </form>
+                <div className="lg:col-span-2 space-y-2 max-h-[500px] overflow-y-auto">
+                  {db.songs.map(s => (
+                    <div key={s.id} className={`p-3 rounded-xl border ${cardBg} flex justify-between items-center`}>
+                      <div><p className="font-bold text-sm">{s.title}</p><p className="text-[10px] opacity-70">{s.artist}</p></div>
+                      <div className="flex gap-2">
+                        <button onClick={()=>loadSong(s)} className="text-xs px-3 py-1 bg-sky-500/10 text-sky-600 font-bold rounded-lg">Sửa</button>
+                        <button onClick={()=>setDb(p=>({...p, songs: p.songs.filter(x=>x.id!==s.id)}))} className="text-xs px-3 py-1 bg-rose-500/10 text-rose-600 font-bold rounded-lg">Xóa</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 3. QUIZ TAB */}
+            {tab === "quiz" && (
+              <>
+                <form onSubmit={saveQuiz} className={`p-6 rounded-3xl border ${cardBg} space-y-3`}>
+                  <h3 className="font-bold text-sm text-amber-600">{editingQuizId ? "Sửa Câu Hỏi" : "Thêm Câu Hỏi"}</h3>
+                  <textarea value={qText} onChange={e=>setQText(e.target.value)} placeholder="Nội dung câu hỏi *" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent h-16" />
+                  <input value={qOpts} onChange={e=>setQOpts(e.target.value)} placeholder="Đáp án cách nhau bởi dấu | (A | B | C | D)" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" />
+                  <input type="number" value={qAns} onChange={e=>setQAns(e.target.value)} placeholder="Vị trí đáp án đúng (0, 1, 2, 3)" required className="w-full p-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent" min="0" max="5" />
+                  <button type="submit" className="w-full py-2 bg-amber-600 text-white rounded-xl text-xs font-bold">{editingQuizId ? "Lưu" : "+ Thêm Câu Đố"}</button>
+                </form>
+                <div className="lg:col-span-2 space-y-2 max-h-[500px] overflow-y-auto">
+                  {db.quizzes.map(q => (
+                    <div key={q.id} className={`p-3 rounded-xl border ${cardBg} flex justify-between items-start`}>
+                      <div>
+                        <p className="font-bold text-sm">{q.question || q.title}</p>
+                        <p className="text-[10px] opacity-70">Đúng: {q.options[q.correctIndex]}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={()=>loadQuiz(q)} className="text-xs px-3 py-1 bg-sky-500/10 text-sky-600 font-bold rounded-lg">Sửa</button>
+                        <button onClick={()=>setDb(p=>({...p, quizzes: p.quizzes.filter(x=>x.id!==q.id)}))} className="text-xs px-3 py-1 bg-rose-500/10 text-rose-600 font-bold rounded-lg">Xóa</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 4. CONFIG SETTINGS (Shop Prices, Rewards, Game Images) */}
+            {tab === "config" && (
+              <form onSubmit={saveSettings} className={`lg:col-span-3 p-6 rounded-3xl border ${cardBg} space-y-6 max-h-[70vh] overflow-y-auto`}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {/* Cột 1: Giá Cửa Hàng */}
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-sm border-b pb-2">🪙 Cấu hình giá Cửa Hàng</h3>
+                    {db.shopItems.map(item => (
+                      <div key={item.id} className="flex justify-between items-center text-xs">
+                        <span>{item.icon} {item.name}</span>
+                        <input name={`shop_${item.id}`} type="number" defaultValue={item.price} className="w-16 p-1 border rounded bg-transparent text-center" />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Cột 2: Phần Thưởng Lộc */}
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-sm border-b pb-2">🍀 Phần Thưởng Mini-Game</h3>
+                    {Object.entries({water: "🌱 Tưới nước", star: "🌙 Tạo chòm sao", diary: "📖 Viết nhật ký", story: "📜 Nối truyện", quiz: "🧩 Câu đố", tea: "🍵 Pha trà", lostItem: "🍄 Đồ thất lạc"}).map(([k, label]) => (
+                      <div key={k} className="flex justify-between items-center text-xs">
+                        <span>{label}</span>
+                        <input name={`rw_${k}`} type="number" defaultValue={db.settings.rewards[k]} className="w-16 p-1 border rounded bg-transparent text-center" />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Cột 3: Ảnh Trò Chơi */}
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-sm border-b pb-2">🖼️ Link Ảnh Mini-Game (Bỏ trống dùng Emoji)</h3>
+                    {["garden", "fishing", "star", "diary", "story", "quiz", "tea"].map(k => (
+                      <div key={k} className="flex flex-col text-xs gap-1">
+                        <span className="capitalize">{k}</span>
+                        <input name={`img_${k}`} type="url" defaultValue={db.settings.gameImages[k]} placeholder="https://..." className="w-full p-1.5 border rounded bg-transparent" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button type="submit" className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">LƯU TẤT CẢ CẤU HÌNH</button>
+              </form>
+            )}
+          </div>
         </div>
       );
     }
 
-    // Render React App to DOM
     const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(<App />);
   </script>
