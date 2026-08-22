@@ -4,1627 +4,1129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quán Trọ Nhà Mèo</title>
-    <!-- Phông chữ Aesthetic -->
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Font Aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
     <!-- Icon Remix -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <!-- Tailwind CSS qua CDN cho layout nhanh -->
+    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Draggabilly (Thư viện siêu nhẹ cho việc kéo thả đồ trang trí) -->
+    <script src="https://unpkg.com/draggabilly@3/dist/draggabilly.pkgd.min.js"></script>
+
     <style>
-        /* === BIẾN MÀU SẮC & THEME === */
+        /* ================= BIẾN CSS & THEME ================= */
         :root {
-            /* Theme Sáng (Thiên nhiên, cỏ cây) */
-            --bg-color: #f0f7f4;
-            --text-color: #2c3e2d;
-            --primary-color: #5c8d6d;
-            --secondary-color: #8bb19b;
-            --accent-color: #d4e6db;
-            --card-bg: rgba(255, 255, 255, 0.85);
-            --border-color: #b2d3c2;
-            --loc-color: #4CAF50;
-            --music-bg: rgba(255, 255, 255, 0.9);
-            --overlay-color: rgba(240, 247, 244, 0.8);
-            --shadow: 0 8px 32px rgba(92, 141, 109, 0.15);
+            --loc-color: #38bdf8;
+            --font-main: 'Quicksand', sans-serif;
+            --font-serif: 'Playfair Display', serif;
+            --font-sign: 'Dancing Script', cursive;
+        }
+
+        [data-theme="light"] {
+            --bg-top: #e0f2fe; /* Xanh dương nhạt */
+            --bg-bottom: #dcfce7; /* Xanh lá nhạt */
+            --text-main: #166534;
+            --text-muted: #15803d;
+            --primary: #0ea5e9;
+            --secondary: #22c55e;
+            --panel-bg: rgba(255, 255, 255, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --shadow: 0 8px 32px rgba(34, 197, 94, 0.15);
+            --room-card-bg: rgba(255, 255, 255, 0.85);
+            --music-panel: rgba(255, 255, 255, 0.9);
         }
 
         [data-theme="dark"] {
-            /* Theme Tối (Bầu trời đêm, sao sáng) */
-            --bg-color: #1a1c29;
-            --text-color: #e2e8f0;
-            --primary-color: #7b8cde;
-            --secondary-color: #4c5a96;
-            --accent-color: #2d3748;
-            --card-bg: rgba(30, 33, 50, 0.85);
-            --border-color: #3b4566;
-            --loc-color: #6ee7b7;
-            --music-bg: rgba(30, 33, 50, 0.95);
-            --overlay-color: rgba(26, 28, 41, 0.85);
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --bg-top: #0f172a; /* Xanh đen */
+            --bg-bottom: #1e1b4b; /* Tím than */
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --panel-bg: rgba(15, 23, 42, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            --room-card-bg: rgba(30, 41, 59, 0.85);
+            --music-panel: rgba(15, 23, 42, 0.95);
         }
 
-        /* === CƠ BẢN & TYPOGRAPHY === */
+        /* ================= RESET & TYPOGRAPHY ================= */
         body {
-            font-family: 'Quicksand', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.8s ease, color 0.5s ease;
-            overflow-x: hidden;
+            font-family: var(--font-main);
+            color: var(--text-main);
+            margin: 0;
             min-height: 100vh;
-            position: relative;
+            overflow-x: hidden;
+            transition: color 0.5s ease;
         }
 
-        h1, h2, h3, .serif-font {
-            font-family: 'Playfair Display', serif;
-        }
+        h1, h2, h3, .serif-font { font-family: var(--font-serif); }
 
-        /* === HIỆU ỨNG BACKGROUND TĨNH / ĐỘNG === */
-        #bg-canvas {
+        /* ================= BACKGROUND AESTHETIC TĨNH ================= */
+        .bg-layer {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -5;
+            transition: all 1s ease;
+        }
+        
+        .bg-gradient {
+            background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
         }
 
-        /* Khung kính (Glassmorphism) */
+        /* Yếu tố phong cảnh (Chỉ hiện ban ngày) */
+        .scenery-day {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 40%;
+            background: url('https://images.unsplash.com/photo-1501862700950-18382cd41497?auto=format&fit=crop&w=1920&q=80') center bottom/cover no-repeat;
+            opacity: 0; mask-image: linear-gradient(to top, black, transparent); -webkit-mask-image: linear-gradient(to top, black, transparent);
+            transition: opacity 1s ease;
+        }
+        [data-theme="light"] .scenery-day { opacity: 0.15; }
+
+        /* Trăng, mây, sao (Chỉ hiện ban đêm) */
+        .scenery-night {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; transition: opacity 1s ease;
+        }
+        [data-theme="dark"] .scenery-night { opacity: 1; }
+        
+        .moon {
+            position: absolute; top: 10%; right: 15%; width: 100px; height: 100px;
+            background: radial-gradient(circle, #fef08a 0%, #fde047 50%, transparent 70%);
+            border-radius: 50%; box-shadow: 0 0 50px #fde047;
+        }
+        
+        .cloud {
+            position: absolute; background: white; border-radius: 50px; opacity: 0.1;
+            filter: blur(8px); animation: floatCloud linear infinite;
+        }
+        .cloud::before, .cloud::after {
+            content: ''; position: absolute; background: white; border-radius: 50%;
+        }
+        .c1 { top: 20%; left: -20%; width: 200px; height: 60px; animation-duration: 40s; }
+        .c2 { top: 40%; right: -20%; width: 300px; height: 80px; animation-duration: 60s; animation-direction: reverse; }
+
+        @keyframes floatCloud {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(120vw); }
+        }
+
+        /* ================= HIỆU ỨNG CANVAS (HẠT ĐỘNG) ================= */
+        #particle-canvas {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -4; pointer-events: none;
+        }
+
+        /* ================= GLASSMORPHISM PANELS ================= */
         .glass-panel {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
             box-shadow: var(--shadow);
-            border-radius: 24px;
-            transition: all 0.3s ease;
+            border-radius: 20px;
         }
 
-        .glass-panel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
-        }
-
-        /* === HEADER & ADMIN GÓC === */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* ================= TOP NAV & LOGIN ================= */
+        .top-nav {
+            position: sticky; top: 0; z-index: 50;
             padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: var(--overlay-color);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(var(--bg-top), 0.5); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--panel-border);
         }
-
-        /* Nút Chuyển Theme */
-        .theme-toggle {
-            cursor: pointer;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            transition: transform 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--card-bg);
+        .logo-area { display: flex; align-items: center; gap: 1rem; }
+        .logo-area img {
+            width: 50px; height: 50px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--primary);
         }
-        .theme-toggle:hover { transform: rotate(15deg) scale(1.1); }
-
-        /* Tiêu đề & Avatar Quán Trọ */
-        .brand {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .brand img {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--primary-color);
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        .brand h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin: 0;
-            letter-spacing: 1px;
-        }
-
-        /* User / Admin Corner */
-        .user-corner {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            cursor: pointer;
-        }
-        .loc-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--accent-color);
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-        .loc-icon { color: var(--loc-color); }
-
-        /* === NAVIGATION TABS === */
-        .tab-nav {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            margin: 2rem 0;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 30px;
-            font-weight: 600;
-            color: var(--text-color);
-            background: var(--accent-color);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 1px solid transparent;
-        }
-        .tab-btn.active {
-            background: var(--primary-color);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(92, 141, 109, 0.4);
-        }
-        .tab-btn:hover:not(.active) {
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-        }
-
-        /* Tab Content */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* === SECTION: BẢNG GHIM PHÒNG === */
-        /* Top 3 Board */
-        .pinned-board {
-            background: var(--accent-color);
-            border: 2px dashed var(--primary-color);
-            border-radius: 24px;
-            padding: 2rem;
-            margin-bottom: 3rem;
-            position: relative;
-        }
-        .pinned-board::before {
-            content: '📌 Bảng Ghim Ra Mắt Sắp Tới';
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--primary-color);
-            color: white;
-            padding: 0.2rem 1.5rem;
-            border-radius: 20px;
-            font-weight: bold;
-            font-family: 'Playfair Display', serif;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+        .logo-area h1 { font-size: 1.5rem; font-weight: bold; margin: 0; }
         
-        .room-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        /* Room Card */
-        .room-card {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid var(--border-color);
-        }
-        .room-img-wrapper {
-            position: relative;
-            height: 200px;
-            overflow: hidden;
-        }
-        .room-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-        .room-card:hover .room-img { transform: scale(1.05); }
+        .nav-actions { display: flex; align-items: center; gap: 1.5rem; }
         
-        .room-rank {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #ffb703;
-            color: #fff;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 10;
+        /* Chuyển đổi theme */
+        .theme-switch {
+            width: 50px; height: 26px; background: var(--text-muted);
+            border-radius: 13px; position: relative; cursor: pointer;
+            transition: background 0.3s;
         }
-        .room-status {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 0.2rem 0.8rem;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: white;
-            z-index: 10;
-        }
-        .status-upcoming { background: #3b82f6; }
-        .status-completed { background: #10b981; }
-
-        .room-info {
-            padding: 1.5rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        .room-tag {
-            align-self: flex-start;
-            background: var(--accent-color);
-            color: var(--primary-color);
-            padding: 0.2rem 0.8rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 0.8rem;
-            text-transform: uppercase;
-        }
-        .room-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-        .room-note {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-bottom: 1rem;
-            line-height: 1.5;
-            flex-grow: 1;
-        }
-        .room-idea {
-            font-style: italic;
-            font-size: 0.85rem;
-            border-left: 3px solid var(--primary-color);
-            padding-left: 0.8rem;
-            margin-bottom: 1.5rem;
-            opacity: 0.7;
-        }
-        .room-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: auto;
-            border-top: 1px dashed var(--border-color);
-            padding-top: 1rem;
-        }
-        .btn-hong {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            background: transparent;
-            color: var(--text-color);
-            border: 1px solid var(--primary-color);
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-        .btn-hong:hover, .btn-hong.active {
-            background: var(--primary-color);
-            color: white;
-        }
-        .btn-visit {
-            background: var(--primary-color);
-            color: white;
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: bold;
-            transition: opacity 0.2s;
-        }
-        .btn-visit:hover { opacity: 0.8; }
-
-        /* Bộ lọc cho phần danh sách */
-        .filter-bar {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 1.5rem;
-            gap: 1rem;
-        }
-        .select-filter {
-            background: var(--card-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        /* === SECTION: KHÔNG GIAN CÁ NHÂN (NHÀ TRỌ) === */
-        .personal-space-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .house-sign {
-            display: inline-block;
-            background: url('https://images.unsplash.com/photo-1597423498219-04418210827d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80') center/cover;
-            padding: 1rem 3rem;
-            border-radius: 12px;
-            border: 4px solid #8b5a2b; /* Màu gỗ */
-            box-shadow: 2px 4px 10px rgba(0,0,0,0.3);
-            position: relative;
-            cursor: pointer;
-        }
-        .house-sign h2 {
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            margin: 0;
-            font-size: 1.5rem;
-        }
-        .house-sign::before, .house-sign::after {
-            content: '';
-            position: absolute;
-            top: -20px;
-            width: 4px;
-            height: 20px;
-            background: #4a4a4a; /* Dây treo */
-        }
-        .house-sign::before { left: 20%; }
-        .house-sign::after { right: 20%; }
-
-        .house-container {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-        /* Mô phỏng khung cảnh nhà */
-        .house-scene {
-            height: 400px;
-            border-radius: 24px;
-            background: url('https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid var(--border-color);
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.2);
-        }
-        /* Items trong nhà */
-        .house-item {
-            position: absolute;
-            font-size: 2rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .house-item:hover { transform: scale(1.2); }
-        
-        .daily-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-        }
-        .action-card {
-            padding: 1.5rem 1rem;
-            text-align: center;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .action-card:hover {
-            background: var(--primary-color);
-            color: white;
-        }
-        .action-icon { font-size: 2rem; }
-
-        /* === MINI GAMES === */
-        .minigame-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        .minigame-card {
-            padding: 2rem 1.5rem;
-            text-align: center;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        .minigame-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.5s;
-        }
-        .minigame-card:hover::before { transform: translateX(100%); }
-        .minigame-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--primary-color);
-        }
-
-        /* === CỬA HÀNG === */
-        .shop-categories {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
-        }
-        .shop-cat-btn {
-            white-space: nowrap;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            background: var(--accent-color);
-            border: none;
-            cursor: pointer;
-        }
-        .shop-cat-btn.active {
-            background: var(--primary-color);
-            color: white;
-        }
-        .shop-items {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 1.5rem;
-        }
-        .shop-item {
-            text-align: center;
-            padding: 1.5rem;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .item-icon { font-size: 3rem; }
-        .item-price {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-weight: bold;
-            color: var(--loc-color);
-        }
-        .btn-buy {
-            margin-top: 0.5rem;
-            padding: 0.4rem 1.5rem;
-            border-radius: 20px;
-            background: var(--text-color);
-            color: var(--bg-color);
-            border: none;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .btn-buy:hover { opacity: 0.8; }
-
-        /* === ĐĨA NHẠC GÓC DƯỚI (MUSIC PLAYER) === */
-        .music-widget {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 100;
-            display: flex;
-            align-items: flex-end;
-            gap: 1rem;
-        }
-        
-        .vinyl-container {
-            position: relative;
-            width: 70px;
-            height: 70px;
-            cursor: pointer;
+        .theme-switch::after {
+            content: '☀️'; position: absolute; top: 2px; left: 2px;
+            width: 22px; height: 22px; background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 12px;
             transition: transform 0.3s;
         }
-        .vinyl-container:hover { transform: scale(1.1); }
+        [data-theme="dark"] .theme-switch { background: #475569; }
+        [data-theme="dark"] .theme-switch::after { content: '🌙'; transform: translateX(24px); }
+
+        /* Login / User Info */
+        .user-block { display: flex; align-items: center; gap: 1rem; cursor: pointer; }
+        .loc-display {
+            background: var(--primary); color: white; padding: 0.3rem 0.8rem;
+            border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .avatar-wrap {
+            width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
+            border: 2px solid var(--primary);
+        }
+        .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Nút đăng nhập Admin nhỏ góc trên cùng */
+        .admin-login-btn {
+            position: fixed; top: 0; right: 0; opacity: 0;
+            width: 20px; height: 20px; cursor: pointer; z-index: 999;
+        }
+
+        /* ================= TABS ================= */
+        .tab-menu {
+            display: flex; justify-content: center; gap: 1rem; margin: 2rem 0; flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 0.6rem 1.5rem; border-radius: 25px; font-weight: 600;
+            background: var(--panel-bg); color: var(--text-main); border: 1px solid var(--panel-border);
+            cursor: pointer; transition: all 0.3s; backdrop-filter: blur(5px);
+        }
+        .tab-btn.active {
+            background: var(--primary); color: white; border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+
+        .tab-panel { display: none; animation: fadeIn 0.4s ease; }
+        .tab-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ================= BẢNG GHIM PHÒNG ================= */
+        .pinned-section {
+            background: var(--panel-bg); border: 2px dashed var(--primary);
+            border-radius: 24px; padding: 2.5rem 2rem 2rem; position: relative; margin-bottom: 3rem;
+        }
+        .pinned-title {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            background: var(--primary); color: white; padding: 0.3rem 2rem;
+            border-radius: 20px; font-weight: bold; font-family: var(--font-serif);
+        }
+
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; }
         
-        .vinyl-record {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: #111;
-            border: 2px solid #333;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+        .room-card {
+            background: var(--room-card-bg); border-radius: 16px; overflow: hidden;
+            border: 1px solid var(--panel-border); transition: transform 0.3s;
+            display: flex; flex-direction: column; position: relative;
+        }
+        .room-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+        
+        .room-img { width: 100%; height: 220px; object-fit: cover; }
+        
+        .room-badge-top {
+            position: absolute; top: 10px; left: 10px; width: 35px; height: 35px;
+            background: #f59e0b; color: white; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-weight: bold; font-size: 1.2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10;
+        }
+        .room-status {
+            position: absolute; top: 10px; right: 10px; padding: 0.3rem 1rem;
+            border-radius: 15px; font-size: 0.8rem; font-weight: bold; color: white; z-index: 10;
+        }
+        .status-wait { background: #3b82f6; }
+        .status-done { background: #10b981; }
+
+        .room-info { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .room-info h3 { font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .room-tag {
+            align-self: flex-start; background: rgba(var(--primary), 0.1); color: var(--primary);
+            padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.75rem; margin-bottom: 1rem;
+        }
+        .room-note { font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; flex-grow: 1; opacity: 0.9; }
+        .room-idea {
+            font-style: italic; font-size: 0.85rem; border-left: 3px solid var(--secondary);
+            padding-left: 1rem; opacity: 0.7; margin-bottom: 1.5rem;
+        }
+        .room-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--panel-border); padding-top: 1rem; }
+        
+        .btn-hong {
+            background: transparent; border: 1px solid var(--primary); color: var(--text-main);
+            padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; display: flex; gap: 0.5rem; align-items: center; font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-hong:hover, .btn-hong.active { background: var(--primary); color: white; }
+
+        /* Nút ẩn Admin Edit */
+        .admin-edit-card {
+            display: none; position: absolute; top: 50px; right: 10px; z-index: 20;
+            background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%;
+            width: 35px; height: 35px; cursor: pointer;
+        }
+        body.admin-mode .admin-edit-card { display: flex; align-items: center; justify-content: center; }
+
+        /* ================= KHÔNG GIAN CÁ NHÂN (KÉO THẢ) ================= */
+        .house-wrapper { display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        .house-sign {
+            align-self: center; background: url('https://images.unsplash.com/photo-1614088921869-7036495b5c77?auto=format&fit=crop&w=400&q=80') center/cover;
+            padding: 1rem 3rem; border: 5px solid #5c4033; border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); cursor: pointer; position: relative;
+        }
+        .house-sign h2 { font-family: var(--font-sign); font-size: 2.5rem; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin: 0; }
+        .house-sign::before, .house-sign::after {
+            content: ''; position: absolute; top: -30px; width: 4px; height: 30px; background: #333;
+        }
+        .house-sign::before { left: 20%; } .house-sign::after { right: 20%; }
+
+        .house-stage {
+            width: 100%; height: 500px; border-radius: 24px; position: relative;
+            background: url('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1600&q=80') center/cover;
+            border: 4px solid var(--panel-border); box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
             overflow: hidden;
         }
-        /* Nhãn đĩa ở giữa */
-        .vinyl-label {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            border: 2px solid #222;
-            z-index: 2;
+
+        /* Object trang trí có thể kéo thả */
+        .deco-item {
+            position: absolute; font-size: 3rem; cursor: grab; user-select: none;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); transition: transform 0.1s;
         }
-        /* Lỗ đĩa */
-        .vinyl-hole {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background: var(--bg-color);
-            border-radius: 50%;
-            z-index: 3;
+        .deco-item:active { cursor: grabbing; transform: scale(1.1); }
+        .deco-item.is-pointer-down { z-index: 100; } /* Draggabilly class */
+
+        .inventory-panel {
+            display: flex; gap: 1rem; overflow-x: auto; padding: 1rem;
+            background: rgba(0,0,0,0.1); border-radius: 16px;
         }
-        /* Hiệu ứng rãnh đĩa */
-        .vinyl-record::after {
-            content: '';
-            position: absolute;
-            top: 5px; left: 5px; right: 5px; bottom: 5px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.1);
+        .inv-item {
+            font-size: 2rem; background: var(--panel-bg); padding: 0.5rem; border-radius: 12px; cursor: pointer;
+            border: 1px solid var(--panel-border); transition: background 0.2s;
+        }
+        .inv-item:hover { background: var(--primary); }
+
+        /* ================= MUSIC PLAYER AESTHETIC ================= */
+        .music-widget {
+            position: fixed; bottom: 30px; right: 30px; z-index: 100;
+            display: flex; align-items: flex-end; gap: 1rem;
+        }
+        .vinyl-btn {
+            width: 80px; height: 80px; border-radius: 50%; cursor: pointer; position: relative;
+            background: #111; border: 3px solid #333; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            display: flex; justify-content: center; align-items: center; transition: transform 0.3s;
+        }
+        .vinyl-btn:hover { transform: scale(1.05); }
+        .vinyl-label { width: 30px; height: 30px; background: var(--primary); border-radius: 50%; }
+        .vinyl-hole { position: absolute; width: 6px; height: 6px; background: var(--bg-bottom); border-radius: 50%; }
+        .vinyl-btn::after {
+            content: ''; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); pointer-events: none;
         }
         
-        /* Hoạt ảnh xoay đĩa */
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .spin { animation: spin 4s linear infinite; }
+        .spin { animation: spinVinyl 3s linear infinite; }
+        @keyframes spinVinyl { 100% { transform: rotate(360deg); } }
 
-        /* Nốt nhạc lơ lửng */
-        .music-note {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            opacity: 0;
-            pointer-events: none;
+        .floating-note {
+            position: absolute; top: 0; left: 50%; color: var(--primary); font-size: 1.5rem; opacity: 0;
         }
-        @keyframes floatNote {
-            0% { transform: translate(-50%, 0) scale(0.8) rotate(0deg); opacity: 0; }
+        .playing .floating-note { animation: noteFloat 2s ease-in infinite; }
+        @keyframes noteFloat {
+            0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
             20% { opacity: 1; }
-            100% { transform: translate(-100%, -40px) scale(1.2) rotate(20deg); opacity: 0; }
-        }
-        .playing .music-note {
-            animation: floatNote 2s ease-in infinite;
+            100% { transform: translate(-150%, -60px) scale(1.2) rotate(-20deg); opacity: 0; }
         }
 
-        /* Nút mở rộng playlist */
-        .btn-expand-music {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--text-color);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        /* Playlist Panel */
-        .playlist-panel {
-            position: absolute;
-            bottom: 80px;
-            right: 0;
-            width: 280px;
-            background: var(--music-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1rem;
-            box-shadow: var(--shadow);
-            display: none;
-            flex-direction: column;
-            gap: 1rem;
+        .music-panel {
+            position: absolute; bottom: 90px; right: 0; width: 300px;
+            background: var(--music-panel); backdrop-filter: blur(15px);
+            border-radius: 20px; border: 1px solid var(--panel-border); box-shadow: var(--shadow);
+            padding: 1.5rem; display: none; flex-direction: column; gap: 1rem;
             transform-origin: bottom right;
         }
-        .playlist-panel.show { display: flex; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .music-panel.show { display: flex; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         
-        @keyframes popUp {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        .music-header { text-align: center; border-bottom: 1px solid rgba(128,128,128,0.2); padding-bottom: 0.5rem; position: relative;}
+        .music-header h3 { font-family: var(--font-serif); color: var(--primary); margin: 0; font-size: 1.2rem; }
 
-        .playlist-header {
-            text-align: center;
-            border-bottom: 1px dashed var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-        .playlist-header h3 {
-            font-size: 1.1rem;
-            margin: 0;
-            color: var(--primary-color);
-        }
-
-        .song-list {
-            max-height: 150px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        /* Tùy chỉnh thanh cuộn nhỏ */
-        .song-list::-webkit-scrollbar { width: 4px; }
-        .song-list::-webkit-scrollbar-thumb { background: var(--secondary-color); border-radius: 4px; }
-
+        .playlist { max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+        .playlist::-webkit-scrollbar { width: 4px; }
+        .playlist::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 4px; }
+        
         .song-item {
-            padding: 0.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            flex-direction: column;
+            padding: 0.5rem; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column;
         }
-        .song-item:hover { background: var(--accent-color); }
-        .song-item.active {
-            background: var(--accent-color);
-            border-left: 3px solid var(--primary-color);
-        }
-        .song-title { font-weight: 600; font-size: 0.9rem; }
-        .song-artist { font-size: 0.75rem; opacity: 0.7; }
+        .song-item:hover { background: rgba(128,128,128,0.1); }
+        .song-item.active { background: rgba(var(--primary), 0.1); border-left: 3px solid var(--primary); }
+        .song-item strong { font-size: 0.9rem; } .song-item span { font-size: 0.75rem; opacity: 0.7; }
 
-        .player-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
-            cursor: pointer;
-            position: relative;
-        }
-        .progress-fill {
-            height: 100%;
-            background: var(--primary-color);
-            width: 0%;
-            border-radius: 2px;
-            pointer-events: none;
-        }
-        .control-btns {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-        }
-        .btn-ctrl {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        /* === MODALS (Đăng nhập, Thông báo, v.v.) === */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .modal-overlay.active { display: flex; }
+        .player-bar { width: 100%; height: 4px; background: rgba(128,128,128,0.2); border-radius: 2px; cursor: pointer; position: relative; }
+        .player-fill { height: 100%; background: var(--primary); width: 0%; border-radius: 2px; pointer-events: none; }
         
-        .modal-content {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 400px;
-            position: relative;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-        }
-        .btn-close-modal {
-            position: absolute;
-            top: 15px; right: 15px;
-            background: none; border: none;
-            font-size: 1.5rem; color: var(--text-color);
-            cursor: pointer;
-        }
-        
-        .input-group { margin-bottom: 1.5rem; }
-        .input-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-        .input-group input {
-            width: 100%; padding: 0.8rem;
-            border-radius: 8px; border: 1px solid var(--border-color);
-            background: transparent; color: var(--text-color);
-            outline: none;
-        }
-        .input-group input:focus { border-color: var(--primary-color); }
-        
-        .btn-primary {
-            width: 100%; padding: 0.8rem;
-            background: var(--primary-color); color: white;
-            border: none; border-radius: 8px;
-            font-weight: bold; cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .btn-primary:hover { opacity: 0.9; }
+        .ctrl-btns { display: flex; justify-content: center; gap: 1.5rem; margin-top: 0.5rem; }
+        .ctrl-btns button { background: none; border: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; }
 
-        /* Admin Badge */
-        .admin-badge {
-            display: none;
-            background: #ef4444;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            text-transform: uppercase;
+        /* ================= MODAL CHUNG ================= */
+        .modal-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-bg.active { display: flex; }
+        .modal-box {
+            background: var(--room-card-bg); width: 90%; max-width: 450px;
+            padding: 2rem; border-radius: 24px; border: 1px solid var(--panel-border);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); position: relative;
+        }
+        .btn-close {
+            position: absolute; top: 15px; right: 15px; background: none; border: none;
+            font-size: 1.5rem; color: var(--text-main); cursor: pointer;
         }
 
-        /* Nút Edit cho Admin */
-        .btn-admin-edit {
-            display: none; /* Ẩn mặc định, hiện khi admin log in */
-            position: absolute;
-            top: 10px; right: 10px;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            border: none; border-radius: 50%;
-            width: 30px; height: 30px;
-            cursor: pointer;
-            z-index: 20;
+        .input-line { margin-bottom: 1.2rem; }
+        .input-line label { display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; }
+        .input-line input, .input-line select {
+            width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid var(--panel-border);
+            background: rgba(255,255,255,0.1); color: var(--text-main); outline: none;
         }
-        body.is-admin .btn-admin-edit { display: flex; align-items: center; justify-content: center; }
-        body.is-admin .admin-badge { display: inline-block; }
+        .input-line input:focus { border-color: var(--primary); }
+        
+        .btn-submit {
+            width: 100%; padding: 0.8rem; background: var(--primary); color: white;
+            border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem;
+        }
+
+        /* ================= ADMIN DASHBOARD (Toàn màn hình) ================= */
+        .admin-dashboard {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #0f172a; color: white; z-index: 9999;
+            display: none; flex-direction: column; overflow-y: auto;
+        }
+        body.admin-mode .admin-dashboard.show-dash { display: flex; }
+        .dash-header {
+            background: #1e293b; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 10;
+        }
+        .dash-header h2 { color: #f87171; font-weight: bold; font-family: var(--font-main); margin: 0; }
+        .dash-close { background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        .dash-body { padding: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .admin-card { background: #1e293b; border-radius: 16px; padding: 1.5rem; border: 1px solid #334155; }
+        .admin-card h3 { color: #38bdf8; margin-bottom: 1rem; border-bottom: 1px dashed #334155; padding-bottom: 0.5rem; }
+        .admin-list { display: flex; flex-direction: column; gap: 0.8rem; max-height: 250px; overflow-y: auto; margin-bottom: 1rem; }
+        .admin-list-item { background: #0f172a; padding: 0.8rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn-dash { background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-small { background: #ef4444; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; border: none; color: white;}
 
     </style>
 </head>
 <body>
 
-    <!-- Canvas cho hiệu ứng nền -->
-    <canvas id="bg-canvas"></canvas>
+    <!-- ================= NỀN VÀ HIỆU ỨNG ================= -->
+    <div class="bg-layer bg-gradient">
+        <!-- Đêm -->
+        <div class="scenery-night">
+            <div class="moon"></div>
+            <div class="cloud c1"></div>
+            <div class="cloud c2"></div>
+        </div>
+        <!-- Ngày -->
+        <div class="scenery-day"></div>
+    </div>
+    <canvas id="particle-canvas"></canvas>
 
-    <!-- HEADER / TOP BAR -->
-    <header class="top-bar">
-        <div class="brand">
-            <img src="ChatGPT_Image_22_00_11_31_thg_7__2026-removebg-preview.png" alt="Logo Nhà Mèo" onerror="this.src='https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'">
+    <!-- Nút bấm bí mật gọi Admin Login ở góc cực trên cùng bên phải -->
+    <div class="admin-login-btn" onclick="openAdminLogin()"></div>
+
+    <!-- ================= HEADER NAV ================= -->
+    <nav class="top-nav">
+        <div class="logo-area">
+            <img src="ChatGPT_Image_22_00_11_31_thg_7__2026-removebg-preview.png" alt="Logo Nhà Mèo" onerror="this.src='https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=150&q=80'">
             <h1 class="serif-font">Quán Trọ Nhà Mèo</h1>
         </div>
-
-        <div class="flex items-center gap-6">
-            <!-- Đổi giao diện Sáng/Tối -->
-            <button class="theme-toggle" id="themeBtn" title="Đổi không gian">
-                <i class="ri-moon-fill" id="themeIcon"></i>
-            </button>
-
-            <!-- Góc người dùng -->
-            <div class="user-corner" id="userCorner" onclick="openLoginModal()">
-                <div class="loc-badge" title="Số Lộc hiện có">
-                    <i class="ri-leaf-fill loc-icon"></i>
-                    <span id="userLoc">0</span>
+        <div class="nav-actions">
+            <div class="theme-switch" id="themeSwitch" title="Đổi ngày/đêm"></div>
+            
+            <div class="user-block" onclick="openUserModal()">
+                <div class="loc-display"><i class="ri-leaf-fill"></i> <span id="locCount">0</span></div>
+                <div class="avatar-wrap">
+                    <img id="headerAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Avatar">
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border-2 border-[var(--primary-color)]">
-                        <img id="userAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-full h-full object-cover">
-                    </div>
-                    <div class="flex flex-col hidden sm:flex">
-                        <span id="userName" class="font-bold text-sm">Khách Vãng Lai</span>
-                        <span class="admin-badge">Admin</span>
-                    </div>
+                <div class="hidden sm:block">
+                    <div class="font-bold text-sm" id="headerName">Khách Vãng Lai</div>
+                    <div class="text-xs opacity-70" id="headerRole">Đăng nhập ngay</div>
                 </div>
             </div>
-        </div>
-    </header>
-
-    <!-- MAIN NAVIGATION TABS -->
-    <nav class="container mx-auto px-4">
-        <div class="tab-nav">
-            <button class="tab-btn active" data-target="tab-rooms">Bảng Ghim Phòng</button>
-            <button class="tab-btn" data-target="tab-home">Nhà Của Bạn</button>
-            <button class="tab-btn" data-target="tab-minigames">Giải Trí & Dạo Chơi</button>
-            <button class="tab-btn" data-target="tab-shop">Cửa Tiệm Lộc</button>
         </div>
     </nav>
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="container mx-auto px-4 pb-24">
+    <!-- Nút mở Dashboard (Chỉ hiện khi là admin) -->
+    <div id="btnOpenDash" style="display: none; text-align: center; margin-top: 1rem;">
+        <button onclick="toggleDashboard(true)" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold shadow-lg animate-pulse"><i class="ri-settings-4-fill"></i> Mở Bảng Quản Trị Admin</button>
+    </div>
 
-        <!-- TAB 1: BẢNG GHIM PHÒNG -->
-        <section id="tab-rooms" class="tab-content active">
+    <!-- ================= TAB MENU ================= -->
+    <div class="container mx-auto px-4">
+        <div class="tab-menu">
+            <button class="tab-btn active" data-tab="tab-room">Bảng Ghim Phòng</button>
+            <button class="tab-btn" data-tab="tab-home">Nhà Của Bạn</button>
+            <button class="tab-btn" data-tab="tab-play">Góc Giải Trí</button>
+            <button class="tab-btn" data-tab="tab-shop">Cửa Tiệm Lộc</button>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 pb-32">
+
+        <!-- ================= TAB 1: BẢNG GHIM PHÒNG ================= -->
+        <section id="tab-room" class="tab-panel active">
             
-            <!-- Vùng Admin Thêm Phòng -->
-            <div class="mb-4 hidden" id="adminAddRoomArea">
-                <button class="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold" onclick="alert('Tính năng Admin: Mở form thêm phòng mới')">
-                    <i class="ri-add-line"></i> Thêm Phòng Mới
-                </button>
-            </div>
-
-            <!-- Bảng Top 3 Sắp Ra Mắt -->
-            <div class="pinned-board">
-                <div class="room-grid" id="topRoomsContainer">
-                    <!-- Phòng Top 1 -->
-                    <article class="room-card glass-panel">
-                        <button class="btn-admin-edit"><i class="ri-edit-line"></i></button>
-                        <div class="room-rank">1</div>
-                        <span class="room-status status-upcoming">Sắp ra mắt</span>
-                        <div class="room-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="room-img" alt="Phòng Mây Trắng">
-                        </div>
-                        <div class="room-info">
-                            <span class="room-tag">Hiện đại • Sáng sủa</span>
-                            <h3 class="room-title">Căn Số 01: Mây Trắng</h3>
-                            <p class="room-note">Căn phòng nằm ở tầng áp mái với giếng trời lớn, đón trọn ánh nắng ban mai. Có sẵn kệ sách và góc pha trà nhỏ.</p>
-                            <p class="room-idea">"Một khoảng trời thu nhỏ cho những người thích nhìn ngắm mây trôi."</p>
-                            <div class="room-actions">
-                                <button class="btn-hong" onclick="toggleHong(this)"><i class="ri-fire-line"></i> <span class="hong-count">124</span> Hóng</button>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Phòng Top 2 -->
-                    <article class="room-card glass-panel">
-                        <button class="btn-admin-edit"><i class="ri-edit-line"></i></button>
-                        <div class="room-rank">2</div>
-                        <span class="room-status status-upcoming">Sắp ra mắt</span>
-                        <div class="room-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1540518614846-7eded433c457?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="room-img" alt="Phòng Rừng Thông">
-                        </div>
-                        <div class="room-info">
-                            <span class="room-tag">Mộc mạc • Cổ điển</span>
-                            <h3 class="room-title">Căn Số 02: Rừng Thông</h3>
-                            <p class="room-note">Nội thất hoàn toàn bằng gỗ thông thơm nhẹ. Cửa sổ hướng ra khu vườn phía sau, tĩnh lặng và yên bình.</p>
-                            <p class="room-idea">"Mùi gỗ thơm xoa dịu những tâm hồn mỏi mệt sau ngày dài."</p>
-                            <div class="room-actions">
-                                <button class="btn-hong" onclick="toggleHong(this)"><i class="ri-fire-line"></i> <span class="hong-count">98</span> Hóng</button>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- Phòng Top 3 -->
-                    <article class="room-card glass-panel">
-                        <button class="btn-admin-edit"><i class="ri-edit-line"></i></button>
-                        <div class="room-rank">3</div>
-                        <span class="room-status status-upcoming">Sắp ra mắt</span>
-                        <div class="room-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="room-img" alt="Phòng Hoàng Hôn">
-                        </div>
-                        <div class="room-info">
-                            <span class="room-tag">Ấm áp • Lãng mạn</span>
-                            <h3 class="room-title">Căn Số 03: Hoàng Hôn</h3>
-                            <p class="room-note">Sở hữu ban công nhỏ với dây leo. Tông màu cam đào chủ đạo, thích hợp cho người thích ngồi chill buổi chiều tà.</p>
-                            <p class="room-idea">"Gói gọn khoảnh khắc mặt trời lặn vào một không gian nhỏ."</p>
-                            <div class="room-actions">
-                                <button class="btn-hong" onclick="toggleHong(this)"><i class="ri-fire-line"></i> <span class="hong-count">85</span> Hóng</button>
-                            </div>
-                        </div>
-                    </article>
+            <!-- Khu vực Top 3 -->
+            <div class="pinned-section">
+                <div class="pinned-title">📌 Sắp Ra Mắt</div>
+                <div class="room-grid" id="topRoomsGrid">
+                    <!-- Sẽ render bằng JS để Admin có thể thao tác -->
                 </div>
             </div>
 
             <!-- Các phòng khác -->
-            <div>
-                <div class="filter-bar">
-                    <select class="select-filter" id="sortRooms">
-                        <option value="newest">Sắp xếp: Mới nhất</option>
-                        <option value="popular">Sắp xếp: Nhiều lượt Hóng nhất</option>
-                    </select>
+            <div class="flex justify-end mb-4">
+                <select id="sortRoom" class="p-2 rounded-lg bg-[var(--panel-bg)] border border-[var(--panel-border)] outline-none text-[var(--text-main)]">
+                    <option value="new">Sắp xếp: Mới nhất</option>
+                    <option value="hot">Sắp xếp: Nhiều Hóng nhất</option>
+                </select>
+            </div>
+            <div class="room-grid" id="otherRoomsGrid">
+                <!-- Sẽ render bằng JS -->
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: NHÀ CỦA BẠN (TRANG TRÍ) ================= -->
+        <section id="tab-home" class="tab-panel">
+            <div class="house-wrapper">
+                <div class="house-sign" onclick="renameHouse()">
+                    <h2 id="houseTitle">Góc Nhỏ Của Lạ</h2>
+                    <p class="text-white text-center text-sm opacity-80 mt-1">(Nhấp để đổi tên biển)</p>
                 </div>
 
-                <div class="room-grid" id="otherRoomsContainer">
-                    <!-- Phòng chưa ra mắt -->
-                    <article class="room-card glass-panel">
-                        <button class="btn-admin-edit"><i class="ri-edit-line"></i></button>
-                        <span class="room-status status-upcoming">Tháng sau</span>
-                        <div class="room-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1499955085172-a104c9463ece?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="room-img" alt="Phòng Mưa Bụi">
-                        </div>
-                        <div class="room-info">
-                            <span class="room-tag">Melancholy • Trầm ấm</span>
-                            <h3 class="room-title">Căn Số 04: Mưa Bụi</h3>
-                            <p class="room-note">Thiết kế cách âm cực tốt, có sẵn máy phát đĩa than. Ánh sáng vàng dịu nhẹ.</p>
-                            <p class="room-idea">"Dành cho những ngày chỉ muốn trốn thế giới, nghe nhạc và pha trà."</p>
-                            <div class="room-actions">
-                                <button class="btn-hong" onclick="toggleHong(this)"><i class="ri-fire-line"></i> <span class="hong-count">45</span> Hóng</button>
-                            </div>
-                        </div>
-                    </article>
+                <div class="glass-panel p-4">
+                    <h3 class="font-bold mb-2"><i class="ri-drag-move-fill"></i> Kéo thả đồ vật để trang trí sân vườn!</h3>
+                    <!-- Khu vực inventory đồ đã mua -->
+                    <div class="inventory-panel" id="inventory">
+                        <div class="inv-item" onclick="addDeco('🪴')" title="Cây Trầu Bà">🪴</div>
+                        <div class="inv-item" onclick="addDeco('🐈')" title="Mèo Lười">🐈</div>
+                        <div class="inv-item" onclick="addDeco('🏮')" title="Đèn Lồng">🏮</div>
+                        <div class="inv-item" onclick="addDeco('🌸')" title="Hoa Đào">🌸</div>
+                    </div>
+                </div>
 
-                    <!-- Phòng đã hoàn thành (có link) -->
-                    <article class="room-card glass-panel" style="opacity: 0.85; order: 99;">
-                        <button class="btn-admin-edit"><i class="ri-edit-line"></i></button>
-                        <span class="room-status status-completed">Đã Hoàn Thành</span>
-                        <div class="room-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1598928506311-c55dd12fa373?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="room-img" alt="Phòng Thư Viện">
-                        </div>
-                        <div class="room-info">
-                            <span class="room-tag">Học thuật • Vintage</span>
-                            <h3 class="room-title">Căn Cũ: Thư Viện Nhỏ</h3>
-                            <p class="room-note">Phòng kín với kệ sách phủ kín hai mặt tường. Bàn làm việc gỗ sồi rộng rãi.</p>
-                            <p class="room-idea">"Đã được thuê bởi một nhà văn thích thức khuya."</p>
-                            <div class="room-actions">
-                                <span class="text-sm opacity-70"><i class="ri-check-double-line"></i> 200 Hóng</span>
-                                <a href="#" class="btn-visit">Xem chi tiết</a>
-                            </div>
-                        </div>
-                    </article>
+                <div class="house-stage" id="houseStage">
+                    <!-- Chứa các vật phẩm được thêm vào -->
+                    <div class="deco-item" style="top: 350px; left: 100px;">🪴</div>
+                    <div class="deco-item" style="top: 400px; left: 300px;">🐈</div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 2: NHÀ CỦA BẠN -->
-        <section id="tab-home" class="tab-content">
-            <div class="personal-space-header">
-                <div class="house-sign" onclick="renameHouse()">
-                    <h2 id="houseNameText" class="serif-font">Góc Nhỏ Của Lạ</h2>
-                    <p class="text-white text-xs mt-1">(Nhấp để đổi tên)</p>
-                </div>
-            </div>
-
-            <div class="house-container">
-                <!-- Khung cảnh nhà -->
-                <div class="house-scene">
-                    <!-- Các item mua từ shop sẽ xuất hiện ở đây (Mô phỏng) -->
-                    <div class="house-item" style="bottom: 20px; left: 50px;" title="Cây Trầu Bà">🪴</div>
-                    <div class="house-item" style="bottom: 20px; right: 80px;" title="Mèo Lười">🐈</div>
-                    <div class="house-item" style="top: 150px; left: 150px;" title="Tranh Treo Tường">🖼️</div>
-                </div>
-
-                <!-- Hành động hằng ngày -->
-                <div class="glass-panel p-6">
-                    <h3 class="text-xl font-bold mb-4 text-[var(--primary-color)]"><i class="ri-calendar-check-line"></i> Nhiệm vụ hôm nay</h3>
-                    <div class="daily-actions">
-                        <div class="action-card glass-panel" onclick="claimLoc(10, this)">
-                            <div class="action-icon">🚪</div>
-                            <h4 class="font-bold">Ghé Nhà Trọ</h4>
-                            <p class="text-sm opacity-80">+10 Lộc</p>
-                        </div>
-                        <div class="action-card glass-panel" onclick="claimLoc(15, this)">
-                            <div class="action-icon">🌱</div>
-                            <h4 class="font-bold">Tưới Cây</h4>
-                            <p class="text-sm opacity-80">+15 Lộc</p>
-                        </div>
-                        <div class="action-card glass-panel" onclick="claimLoc(20, this)">
-                            <div class="action-icon">📖</div>
-                            <h4 class="font-bold">Viết Nhật Ký</h4>
-                            <p class="text-sm opacity-80">+20 Lộc</p>
-                        </div>
-                        <div class="action-card glass-panel" onclick="alert('Tính năng đang phát triển: Ghé thăm nhà bạn bè!')">
-                            <div class="action-icon">🚶</div>
-                            <h4 class="font-bold">Thăm Hàng Xóm</h4>
-                            <p class="text-sm opacity-80">+10 Lộc</p>
-                        </div>
+        <!-- ================= TAB 3 & 4 (Placeholder mô phỏng) ================= -->
+        <section id="tab-play" class="tab-panel">
+            <div class="glass-panel p-8 text-center">
+                <h2 class="text-3xl font-bold serif-font mb-4 text-[var(--primary)]">Góc Thư Giãn</h2>
+                <p class="mb-8">Tham gia các mini-game nhẹ nhàng để nhận Lộc 🍀</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 cursor-pointer hover:bg-[var(--primary)] hover:text-white transition" onclick="giveLoc(15)">
+                        <div class="text-5xl mb-2">🎣</div>
+                        <h3 class="font-bold">Câu Cá Bên Suối</h3>
+                        <p class="text-sm">Click để câu cá (+15 Lộc)</p>
+                    </div>
+                    <div class="glass-panel p-6 cursor-pointer hover:bg-[var(--primary)] hover:text-white transition" onclick="giveLoc(20)">
+                        <div class="text-5xl mb-2">🍵</div>
+                        <h3 class="font-bold">Pha Trà Đêm</h3>
+                        <p class="text-sm">Click để pha trà (+20 Lộc)</p>
+                    </div>
+                    <div class="glass-panel p-6 cursor-pointer hover:bg-[var(--primary)] hover:text-white transition" onclick="giveLoc(10)">
+                        <div class="text-5xl mb-2">🌙</div>
+                        <h3 class="font-bold">Nhặt Sao Rơi</h3>
+                        <p class="text-sm">Click để nhặt sao (+10 Lộc)</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 3: GIẢI TRÍ & DẠO CHƠI (MINI GAMES) -->
-        <section id="tab-minigames" class="tab-content">
-            <div class="text-center mb-8">
-                <h2 class="text-2xl font-bold text-[var(--primary-color)] serif-font">Góc Thư Giãn</h2>
-                <p class="opacity-80">Chơi nhẹ nhàng, thu thập Lộc và thư giãn tâm hồn.</p>
-            </div>
-
-            <div class="minigame-grid">
-                <div class="minigame-card glass-panel" onclick="playGame('fishing')">
-                    <div class="minigame-icon">🎣</div>
-                    <h3 class="font-bold text-lg mb-2">Câu Cá Bên Suối</h3>
-                    <p class="text-sm opacity-80">Thả câu và chờ đợi. Có thể bắt được cá hiếm đấy!</p>
-                </div>
-                
-                <div class="minigame-card glass-panel" onclick="playGame('tea')">
-                    <div class="minigame-icon">🍵</div>
-                    <h3 class="font-bold text-lg mb-2">Pha Trà</h3>
-                    <p class="text-sm opacity-80">Kết hợp thảo mộc để tạo ra công thức trà cho riêng mình.</p>
-                </div>
-
-                <div class="minigame-card glass-panel" onclick="playGame('stars')">
-                    <div class="minigame-icon">🌙</div>
-                    <h3 class="font-bold text-lg mb-2">Vườn Sao</h3>
-                    <p class="text-sm opacity-80">Chỉ mở vào ban đêm. Nối các vì sao để tạo chòm sao mới.</p>
-                </div>
-
-                <div class="minigame-card glass-panel" onclick="playGame('story')">
-                    <div class="minigame-icon">📜</div>
-                    <h3 class="font-bold text-lg mb-2">Câu Chuyện Nối Tiếp</h3>
-                    <p class="text-sm opacity-80">Cùng những vị khách khác viết nên một câu chuyện chung.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 4: CỬA TIỆM LỘC -->
-        <section id="tab-shop" class="tab-content">
-            <div class="flex justify-between items-end mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-[var(--primary-color)] serif-font">Cửa Tiệm Lộc</h2>
-                    <p class="opacity-80">Dùng Lộc để mua đồ trang trí cho căn nhà của bạn.</p>
-                </div>
-                <div class="hidden" id="adminEditShopArea">
-                    <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm font-bold"><i class="ri-edit-line"></i> Chỉnh sửa Giá/Vật phẩm</button>
-                </div>
-            </div>
-
-            <div class="shop-categories">
-                <button class="shop-cat-btn active">Tất cả</button>
-                <button class="shop-cat-btn">🏠 Nội thất</button>
-                <button class="shop-cat-btn">🪴 Cây & Hoa</button>
-                <button class="shop-cat-btn">🐈 Thú cưng</button>
-                <button class="shop-cat-btn">✨ Hiệu ứng</button>
-            </div>
-
-            <div class="shop-items">
-                <!-- Shop Item -->
-                <div class="shop-item glass-panel">
-                    <div class="item-icon">🛋️</div>
-                    <h4 class="font-bold">Sofa Đọc Sách</h4>
-                    <div class="item-price"><i class="ri-leaf-fill"></i> 150 Lộc</div>
-                    <button class="btn-buy" onclick="buyItem(150, 'Sofa Đọc Sách')">Mua</button>
-                </div>
-                <!-- Shop Item -->
-                <div class="shop-item glass-panel">
-                    <div class="item-icon">🌸</div>
-                    <div class="text-xs bg-pink-100 text-pink-600 px-2 rounded-full mb-1">Giới hạn</div>
-                    <h4 class="font-bold">Chậu Hoa Anh Đào</h4>
-                    <div class="item-price"><i class="ri-leaf-fill"></i> 300 Lộc</div>
-                    <button class="btn-buy" onclick="buyItem(300, 'Chậu Hoa Anh Đào')">Mua</button>
-                </div>
-                <!-- Shop Item -->
-                <div class="shop-item glass-panel">
-                    <div class="item-icon">🦉</div>
-                    <h4 class="font-bold">Cú Mèo Đêm</h4>
-                    <div class="item-price"><i class="ri-leaf-fill"></i> 500 Lộc</div>
-                    <button class="btn-buy" onclick="buyItem(500, 'Cú Mèo Đêm')">Mua</button>
-                </div>
-                <!-- Shop Item -->
-                <div class="shop-item glass-panel">
-                    <div class="item-icon">🏮</div>
-                    <h4 class="font-bold">Đèn Lồng Giấy</h4>
-                    <div class="item-price"><i class="ri-leaf-fill"></i> 100 Lộc</div>
-                    <button class="btn-buy" onclick="buyItem(100, 'Đèn Lồng Giấy')">Mua</button>
+        <section id="tab-shop" class="tab-panel">
+            <div class="glass-panel p-8">
+                <h2 class="text-3xl font-bold serif-font mb-4 text-[var(--primary)]">Cửa Tiệm Lộc</h2>
+                <p class="mb-6">Dùng Lộc mua đồ trang trí cho sân vườn. (Nhấp để mua)</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="shopGrid">
+                    <!-- Render by JS -->
                 </div>
             </div>
         </section>
 
     </main>
 
-    <!-- MUSIC PLAYER WIDGET -->
+    <!-- ================= MUSIC WIDGET ================= -->
     <div class="music-widget">
-        <!-- Nút mở list nhạc -->
-        <button class="btn-expand-music" onclick="togglePlaylist()">
-            <i class="ri-play-list-line"></i>
+        <!-- Nút mở list -->
+        <button onclick="toggleMusicPanel()" class="w-10 h-10 rounded-full bg-[var(--panel-bg)] border border-[var(--panel-border)] flex items-center justify-center cursor-pointer shadow-lg">
+            <i class="ri-play-list-fill"></i>
         </button>
 
-        <!-- Đĩa than -->
-        <div class="vinyl-container" id="vinylContainer" onclick="togglePlay()">
-            <div class="vinyl-record" id="vinylRecord">
-                <div class="vinyl-label"></div>
-                <div class="vinyl-hole"></div>
-            </div>
-            <i class="ri-music-2-fill music-note"></i>
+        <div class="vinyl-btn" id="vinylBtn" onclick="togglePlay()">
+            <div class="vinyl-label"></div>
+            <div class="vinyl-hole"></div>
+            <i class="ri-music-2-fill floating-note"></i>
         </div>
 
-        <!-- Bảng điều khiển list nhạc -->
-        <div class="playlist-panel" id="playlistPanel">
-            <div class="playlist-header relative">
-                <h3 class="serif-font">🎶 Góc Yên Tĩnh</h3>
-                <p class="text-xs opacity-70">Nhạc phát ngẫu nhiên</p>
-                <button class="btn-admin-edit" style="top: 0; right: 0; width: 24px; height: 24px; font-size: 12px;"><i class="ri-edit-line"></i></button>
+        <div class="music-panel" id="musicPanel">
+            <div class="music-header">
+                <h3>🎶 Băng Nhạc Gió</h3>
             </div>
+            <div class="playlist" id="playlistUI"></div>
             
-            <div class="song-list" id="songList">
-                <!-- Danh sách bài hát sinh bằng JS -->
-            </div>
-
-            <div class="player-controls">
-                <div class="text-xs flex justify-between opacity-70">
-                    <span id="currentTimeStr">0:00</span>
-                    <span id="durationStr">0:00</span>
+            <div class="mt-2">
+                <div class="flex justify-between text-xs opacity-70 mb-1">
+                    <span id="mCurr">0:00</span> <span id="mDur">0:00</span>
                 </div>
-                <div class="progress-bar" id="progressBar" onclick="seekMusic(event)">
-                    <div class="progress-fill" id="progressFill"></div>
+                <div class="player-bar" id="pBar" onclick="seekAudio(event)">
+                    <div class="player-fill" id="pFill"></div>
                 </div>
-                <div class="control-btns mt-2">
-                    <button class="btn-ctrl" onclick="playNext()"><i class="ri-skip-forward-fill"></i></button>
-                    <button class="btn-ctrl" id="mainPlayBtn" onclick="togglePlay()"><i class="ri-play-circle-fill"></i></button>
+                <div class="ctrl-btns">
+                    <button onclick="playNext()"><i class="ri-skip-forward-fill"></i></button>
+                    <button onclick="togglePlay()" id="btnPlayPause"><i class="ri-play-circle-fill"></i></button>
                 </div>
             </div>
         </div>
-        
-        <!-- Thẻ Audio ẩn -->
         <audio id="audioPlayer"></audio>
     </div>
 
-    <!-- MODAL ĐĂNG NHẬP / THÔNG TIN CÁ NHÂN -->
-    <div class="modal-overlay" id="loginModal">
-        <div class="modal-content">
-            <button class="btn-close-modal" onclick="closeModal('loginModal')"><i class="ri-close-line"></i></button>
-            <h2 class="text-2xl font-bold mb-6 text-center text-[var(--primary-color)] serif-font">Nhận Phòng</h2>
+    <!-- ================= MODALS ================= -->
+    <!-- USER LOGIN / PROFILE MODAL -->
+    <div class="modal-bg" id="userModal">
+        <div class="modal-box">
+            <button class="btn-close" onclick="closeModal('userModal')"><i class="ri-close-line"></i></button>
+            <h2 class="text-2xl font-bold serif-font text-center mb-6 text-[var(--primary)]" id="modalTitle">Đăng Nhập Khách</h2>
             
-            <div id="loginForm">
-                <div class="input-group">
-                    <label>Tên định danh (Email hoặc Username)</label>
-                    <input type="text" id="loginUsername" placeholder="Nhập tên của bạn...">
+            <div id="loginView">
+                <div class="input-line">
+                    <label>Email hoặc Tên</label>
+                    <input type="text" id="loginUser" placeholder="Tên của bạn...">
                 </div>
-                <div class="input-group">
-                    <label>Mật mã</label>
-                    <input type="password" id="loginPassword" placeholder="Nhập mật mã...">
+                <div class="input-line">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="loginPass" placeholder="*****">
                 </div>
-                <button class="btn-primary mb-4" onclick="handleLogin()">Vào Nhà Trọ</button>
-                <button class="w-full py-2 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition text-gray-700">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="w-5 h-5">
-                    Đăng nhập bằng Gmail
+                <button class="btn-submit mb-4" onclick="doLogin()">Vào Nhà Trọ</button>
+                <button class="w-full py-2 border border-gray-400 rounded-lg flex items-center justify-center gap-2 hover:bg-white hover:text-black transition">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" class="w-5 h-5"> Bằng Gmail
                 </button>
             </div>
 
-            <div id="profileForm" style="display: none;">
-                <div class="text-center mb-4">
-                    <img id="modalAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-20 h-20 rounded-full mx-auto border-4 border-[var(--primary-color)] object-cover mb-2 cursor-pointer" title="Đổi Avatar">
-                    <div class="text-xs opacity-70">(Nhấp vào ảnh để đổi)</div>
+            <div id="profileView" style="display: none;">
+                <div class="flex flex-col items-center mb-4">
+                    <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-[var(--primary)] mb-2 relative group cursor-pointer">
+                        <img id="modalAvatarPreview" src="" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                            <i class="ri-camera-fill text-white text-xl"></i>
+                        </div>
+                        <input type="file" id="avatarUpload" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onchange="previewAvatar(event)">
+                    </div>
+                    <span class="text-xs opacity-70">Nhấp để đổi ảnh đại diện</span>
                 </div>
-                <div class="input-group">
+                <div class="input-line">
                     <label>Tên hiển thị</label>
-                    <input type="text" id="profileName" value="Khách Vãng Lai">
+                    <input type="text" id="profileNameInp">
                 </div>
-                <button class="btn-primary mb-2" onclick="saveProfile()">Lưu Thông Tin</button>
-                <button class="w-full py-2 text-red-500 font-bold hover:bg-red-50 rounded-lg transition" onclick="handleLogout()">Rời Nhà Trọ (Đăng xuất)</button>
+                <button class="btn-submit mb-2" onclick="saveProfile()">Lưu Thông Tin</button>
+                <button class="w-full py-2 text-red-500 font-bold mt-2" onclick="doLogout()">Đăng Xuất</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL THÔNG BÁO -->
-    <div class="modal-overlay" id="alertModal">
-        <div class="modal-content text-center">
-            <div class="text-4xl mb-4" id="alertIcon">✨</div>
-            <h3 class="text-xl font-bold mb-2" id="alertTitle">Thông báo</h3>
-            <p class="mb-6 opacity-80" id="alertMessage">Nội dung thông báo...</p>
-            <button class="btn-primary" onclick="closeModal('alertModal')">Đã hiểu</button>
+
+    <!-- ================= ADMIN DASHBOARD PANELS (FULLSCREEN) ================= -->
+    <div class="admin-dashboard" id="adminDash">
+        <div class="dash-header">
+            <h2>🛠️ BẢNG ĐIỀU KHIỂN QUẢN TRỊ (ADMIN)</h2>
+            <button class="dash-close" onclick="toggleDashboard(false)">Đóng Dashboard</button>
+        </div>
+        
+        <div class="dash-body">
+            <!-- Quản lý Phòng -->
+            <div class="admin-card">
+                <h3>🏠 Quản Lý Thẻ Phòng</h3>
+                <div class="input-line">
+                    <input type="text" id="adRoomTitle" placeholder="Tên phòng (VD: Căn 01: Mây)">
+                </div>
+                <div class="input-line flex gap-2">
+                    <select id="adRoomRank" class="w-1/3">
+                        <option value="0">Không ghim</option>
+                        <option value="1">Ghim Top 1</option>
+                        <option value="2">Ghim Top 2</option>
+                        <option value="3">Ghim Top 3</option>
+                    </select>
+                    <select id="adRoomStatus" class="w-2/3">
+                        <option value="wait">Sắp ra mắt</option>
+                        <option value="done">Đã hoàn thành</option>
+                    </select>
+                </div>
+                <div class="input-line" id="linkGroup" style="display:none;">
+                    <input type="text" id="adRoomLink" placeholder="Link dẫn đến phòng (Nếu hoàn thành)">
+                </div>
+                <button class="btn-dash" onclick="adminAddOrUpdateRoom()">Thêm / Cập nhật Phòng</button>
+                <div class="text-xs text-gray-400 mt-2">*Lưu ý: Edit thực tế cần back-end. Demo tạo mới thẻ.</div>
+            </div>
+
+            <!-- Quản lý Nhạc -->
+            <div class="admin-card">
+                <h3>🎵 Quản Lý Nhạc (Mp3)</h3>
+                <div class="input-line">
+                    <input type="text" id="adSongLink" placeholder="Link MP3">
+                </div>
+                <div class="input-line flex gap-2">
+                    <input type="text" id="adSongName" placeholder="Tên bài hát">
+                    <input type="text" id="adSongArtist" placeholder="Ca sĩ">
+                </div>
+                <button class="btn-dash" onclick="adminAddSong()">Thêm vào Playlist</button>
+                
+                <h4 class="mt-4 font-bold text-sm text-gray-400 mb-2">Playlist hiện tại:</h4>
+                <div class="admin-list" id="adSongListUI"></div>
+            </div>
+
+            <!-- Quản lý Cửa Hàng & Lộc -->
+            <div class="admin-card">
+                <h3>🛍️ Quản Lý Cửa Hàng</h3>
+                <div class="input-line flex gap-2">
+                    <input type="text" id="adItemIcon" class="w-1/4" placeholder="Icon (VD: 🪴)">
+                    <input type="text" id="adItemName" class="w-1/2" placeholder="Tên vật phẩm">
+                    <input type="number" id="adItemPrice" class="w-1/4" placeholder="Giá">
+                </div>
+                <button class="btn-dash" onclick="adminAddItem()">Thêm vào Cửa hàng</button>
+                
+                <h4 class="mt-4 font-bold text-sm text-gray-400 mb-2">Điều chỉnh Lộc thưởng gốc (Mô phỏng)</h4>
+                <div class="input-line flex gap-2">
+                    <input type="number" placeholder="Điểm danh hằng ngày" value="10">
+                    <button class="btn-small bg-blue-500">Lưu</button>
+                </div>
+            </div>
         </div>
     </div>
 
 
     <!-- ================= JAVASCRIPT ================= -->
     <script>
-        // === KHAI BÁO BIẾN TOÀN CỤC ===
-        let userLoc = 0;
+        // === BIẾN TOÀN CỤC ===
+        let isDark = false;
+        let isLogged = false;
         let isAdmin = false;
-        let hasRenamedHouse = false;
-        let isPlaying = false;
-        
-        // Dữ liệu nhạc ảo (Admin có thể thêm bằng cách cập nhật mảng này)
-        const playlist = [
-            { title: "Ghibli Relaxing", artist: "Studio Ghibli", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3" },
-            { title: "Rain & Piano", artist: "Relaxing Vibes", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Shipping_Lanes.mp3" },
-            { title: "Night Walk", artist: "Lofi Boy", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/Music_for_Video/springtide/Sounds_strange_weird_but_unmistakably_romantic_Vol1/springtide_-_03_-_We_Are_Heading_to_the_East.mp3" }
-        ];
-        // Trộn playlist ngẫu nhiên
-        let playQueue = [...playlist].sort(() => Math.random() - 0.5);
-        let currentSongIndex = 0;
+        let myLoc = 0;
+        let draggies = []; // Chứa các object kéo thả
 
-        // Bắt đầu ngay khi DOM tải xong
+        // Dữ liệu mô phỏng
+        let rooms = [
+            { id: 1, title: 'Căn 01: Mây Trắng', tag: 'Hiện đại', note: 'Phòng áp mái có giếng trời.', idea: 'Nhìn ngắm mây trôi.', img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600', rank: 1, status: 'wait', hong: 124 },
+            { id: 2, title: 'Căn 02: Rừng Thông', tag: 'Cổ điển', note: 'Nội thất gỗ thơm.', idea: 'Mùi gỗ xoa dịu tâm hồn.', img: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=600', rank: 2, status: 'wait', hong: 98 },
+            { id: 3, title: 'Căn 03: Hoàng Hôn', tag: 'Lãng mạn', note: 'Ban công hướng tây.', idea: 'Khoảnh khắc mặt trời lặn.', img: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600', rank: 3, status: 'wait', hong: 85 },
+            { id: 4, title: 'Căn Cũ: Thư Viện', tag: 'Vintage', note: 'Phòng phủ kín sách.', idea: 'Dành cho nhà văn.', img: 'https://images.unsplash.com/photo-1598928506311-c55dd12fa373?auto=format&fit=crop&w=600', rank: 0, status: 'done', link: '#', hong: 200 }
+        ];
+
+        let playlist = [
+            { title: "Ghibli Relaxing", artist: "Studio Ghibli", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3" },
+            { title: "Rain & Piano", artist: "Relaxing Vibes", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Shipping_Lanes.mp3" }
+        ];
+
+        let shopItems = [
+            { icon: '🛋️', name: 'Sofa Đọc Sách', price: 150 },
+            { icon: '🦉', name: 'Cú Mèo Đêm', price: 300 },
+            { icon: '🪴', name: 'Chậu Trầu Bà', price: 50 }
+        ];
+
+        // Khởi tạo
         document.addEventListener('DOMContentLoaded', () => {
             initTabs();
             initTheme();
-            initMusicPlayer();
-            initCanvasBackground();
+            initCanvas();
+            renderRooms();
+            renderShop();
+            initMusic();
+            initDraggables();
+            
+            // Lắng nghe đổi status trong form admin để hiện/ẩn ô link
+            document.getElementById('adRoomStatus').addEventListener('change', function() {
+                document.getElementById('linkGroup').style.display = this.value === 'done' ? 'block' : 'none';
+            });
         });
 
-        // === HỆ THỐNG TAB ===
+        // === 1. UI CHUNG & TABS ===
         function initTabs() {
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabBtns.forEach(btn => {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    // Xóa active hiện tại
-                    document.querySelector('.tab-btn.active').classList.remove('active');
-                    document.querySelector('.tab-content.active').classList.remove('active');
-                    
-                    // Thêm active cho tab mới
+                    document.querySelectorAll('.tab-btn, .tab-panel').forEach(el => el.classList.remove('active'));
                     btn.classList.add('active');
-                    const targetId = btn.getAttribute('data-target');
-                    document.getElementById(targetId).classList.add('active');
+                    document.getElementById(btn.dataset.tab).classList.add('active');
                 });
             });
         }
 
-        // === HỆ THỐNG THEME (SÁNG / TỐI) ===
         function initTheme() {
-            const themeBtn = document.getElementById('themeBtn');
-            const themeIcon = document.getElementById('themeIcon');
-            const htmlTag = document.documentElement;
-
-            // Kiểm tra localStorage
-            const savedTheme = localStorage.getItem('nhameo_theme') || 'light';
-            htmlTag.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
-
-            themeBtn.addEventListener('click', () => {
-                const currentTheme = htmlTag.getAttribute('data-theme');
-                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-                
-                htmlTag.setAttribute('data-theme', newTheme);
-                localStorage.setItem('nhameo_theme', newTheme);
-                updateThemeIcon(newTheme);
-                initCanvasBackground(); // Vẽ lại nền cho hợp theme
+            const toggle = document.getElementById('themeSwitch');
+            const html = document.documentElement;
+            // Default: Light
+            toggle.addEventListener('click', () => {
+                isDark = !isDark;
+                html.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                initCanvas(); // Vẽ lại hiệu ứng
             });
-
-            function updateThemeIcon(theme) {
-                if (theme === 'light') {
-                    themeIcon.className = 'ri-moon-fill'; // Nút để chuyển sang tối
-                } else {
-                    themeIcon.className = 'ri-sun-fill text-yellow-300'; // Nút để chuyển sang sáng
-                }
-            }
         }
 
-        // === HIỆU ỨNG NỀN CANVAS (Lá bay / Đom đóm) ===
-        function initCanvasBackground() {
-            const canvas = document.getElementById('bg-canvas');
+        // Tự tạo hiệu ứng lá bay/sao bay bằng Canvas
+        function initCanvas() {
+            const canvas = document.getElementById('particle-canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-            const theme = document.documentElement.getAttribute('data-theme');
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            
             let particles = [];
-            const particleCount = theme === 'light' ? 30 : 60; // Sáng ít hạt (lá), tối nhiều (sao/đom đóm)
+            const count = isDark ? 80 : 30; // Đêm nhiều sao hơn ngày (lá)
 
-            class Particle {
-                constructor() {
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
-                    
-                    if (theme === 'light') {
-                        // Lá bay hoặc cánh hoa
-                        this.size = Math.random() * 5 + 3;
-                        this.speedX = Math.random() * 2 - 1;
-                        this.speedY = Math.random() * 2 + 1; // Rơi xuống
-                        this.color = Math.random() > 0.5 ? 'rgba(92, 141, 109, 0.3)' : 'rgba(212, 230, 219, 0.5)';
-                    } else {
-                        // Sao / Đom đóm
-                        this.size = Math.random() * 2 + 0.5;
-                        this.speedX = Math.random() * 0.5 - 0.25;
-                        this.speedY = Math.random() * -0.5 - 0.2; // Bay nhẹ lên
-                        this.color = 'rgba(255, 255, 255, ' + (Math.random() * 0.5 + 0.3) + ')';
-                        this.glow = Math.random() > 0.8;
-                    }
-                }
-                update() {
-                    this.x += this.speedX;
-                    this.y += this.speedY;
-
-                    // Reset khi ra khỏi màn hình
-                    if (theme === 'light' && this.y > canvas.height) {
-                        this.y = -10;
-                        this.x = Math.random() * canvas.width;
-                    } else if (theme === 'dark' && this.y < -10) {
-                        this.y = canvas.height + 10;
-                        this.x = Math.random() * canvas.width;
-                    }
-                }
-                draw() {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.fillStyle = this.color;
-                    if (theme === 'dark' && this.glow) {
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = 'white';
-                    } else {
-                        ctx.shadowBlur = 0;
-                    }
-                    ctx.fill();
-                }
-            }
-
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
+            for(let i=0; i<count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: isDark ? (Math.random() * 1.5 + 0.5) : (Math.random() * 4 + 2),
+                    speedX: Math.random() * 2 - 1,
+                    speedY: isDark ? (Math.random() * -0.5 - 0.1) : (Math.random() * 1.5 + 0.5), // Đêm bay lên, ngày rơi xuống
+                    color: isDark ? `rgba(255,255,255,${Math.random()*0.8+0.2})` : `rgba(34,197,94,${Math.random()*0.4+0.1})`
+                });
             }
 
             function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particles.forEach(p => { p.update(); p.draw(); });
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                particles.forEach(p => {
+                    p.x += p.speedX; p.y += p.speedY;
+                    if(p.y > canvas.height && !isDark) p.y = -10;
+                    if(p.y < 0 && isDark) p.y = canvas.height + 10;
+                    if(p.x > canvas.width) p.x = -10;
+                    if(p.x < 0) p.x = canvas.width + 10;
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                });
                 requestAnimationFrame(animate);
             }
             animate();
-
-            // Resize canvas
-            window.addEventListener('resize', () => {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            });
         }
 
-        // === HỆ THỐNG MUSIC PLAYER ===
-        const audio = document.getElementById('audioPlayer');
-        const vinylRecord = document.getElementById('vinylRecord');
-        const vinylContainer = document.getElementById('vinylContainer');
-        const mainPlayBtn = document.getElementById('mainPlayBtn');
-        const progressFill = document.getElementById('progressFill');
-        const songListEl = document.getElementById('songList');
-
-        function initMusicPlayer() {
-            renderPlaylist();
-            loadSong(0);
-
-            // Sự kiện audio
-            audio.addEventListener('timeupdate', updateProgress);
-            audio.addEventListener('ended', playNext);
-            audio.addEventListener('loadedmetadata', () => {
-                document.getElementById('durationStr').innerText = formatTime(audio.duration);
-            });
-        }
-
-        function renderPlaylist() {
-            songListEl.innerHTML = '';
-            playQueue.forEach((song, index) => {
-                const item = document.createElement('div');
-                item.className = `song-item ${index === currentSongIndex ? 'active' : ''}`;
-                item.innerHTML = `
-                    <span class="song-title">${song.title}</span>
-                    <span class="song-artist">${song.artist}</span>
-                `;
-                item.onclick = () => {
-                    currentSongIndex = index;
-                    loadSong(currentSongIndex);
-                    playMusic();
-                };
-                songListEl.appendChild(item);
-            });
-        }
-
-        function loadSong(index) {
-            audio.src = playQueue[index].src;
-            // Update UI list
-            document.querySelectorAll('.song-item').forEach((el, i) => {
-                el.classList.toggle('active', i === index);
-            });
-        }
-
-        function togglePlay() {
-            if (audio.paused) playMusic();
-            else pauseMusic();
-        }
-
-        function playMusic() {
-            audio.play().catch(e => console.log("Trình duyệt chặn tự động phát:", e));
-            vinylRecord.classList.add('spin');
-            vinylContainer.classList.add('playing');
-            mainPlayBtn.innerHTML = '<i class="ri-pause-circle-fill"></i>';
-            isPlaying = true;
-        }
-
-        function pauseMusic() {
-            audio.pause();
-            vinylRecord.classList.remove('spin');
-            vinylContainer.classList.remove('playing');
-            mainPlayBtn.innerHTML = '<i class="ri-play-circle-fill"></i>';
-            isPlaying = false;
-        }
-
-        function playNext() {
-            currentSongIndex++;
-            if (currentSongIndex >= playQueue.length) {
-                // Nếu hết list, dừng nhạc hoặc trộn lại. Theo y/c: không lặp trừ khi hết list.
-                // Trộn lại list mới
-                playQueue = [...playlist].sort(() => Math.random() - 0.5);
-                currentSongIndex = 0;
-            }
-            loadSong(currentSongIndex);
-            playMusic();
-            renderPlaylist(); // Cập nhật lại UI vì thứ tự có thể đổi
-        }
-
-        function updateProgress() {
-            if(audio.duration) {
-                const percent = (audio.currentTime / audio.duration) * 100;
-                progressFill.style.width = `${percent}%`;
-                document.getElementById('currentTimeStr').innerText = formatTime(audio.currentTime);
-            }
-        }
-
-        function seekMusic(e) {
-            const bar = document.getElementById('progressBar');
-            const width = bar.clientWidth;
-            const clickX = e.offsetX;
-            const duration = audio.duration;
-            audio.currentTime = (clickX / width) * duration;
-        }
-
-        function formatTime(seconds) {
-            const min = Math.floor(seconds / 60);
-            const sec = Math.floor(seconds % 60);
-            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-        }
-
-        function togglePlaylist() {
-            document.getElementById('playlistPanel').classList.toggle('show');
-        }
-
-
-        // === XỬ LÝ LỘC, TƯƠNG TÁC & MINIGAMES ===
-        function claimLoc(amount, element) {
-            // Hiệu ứng vô hiệu hóa card sau khi bấm
-            if(element.classList.contains('opacity-50')) return;
-            
-            userLoc += amount;
-            document.getElementById('userLoc').innerText = userLoc;
-            element.classList.add('opacity-50', 'cursor-not-allowed');
-            element.innerHTML += `<div class="text-xs text-[var(--loc-color)] font-bold mt-2">Đã nhận</div>`;
-            
-            showToast(`Bạn nhận được ${amount} Lộc 🍀!`);
-        }
-
-        function buyItem(price, itemName) {
-            if (userLoc >= price) {
-                userLoc -= price;
-                document.getElementById('userLoc').innerText = userLoc;
-                showAlert('Mua thành công!', `Bạn đã mua "${itemName}". Đồ sẽ được thêm vào kho của bạn.`);
-            } else {
-                showAlert('Không đủ Lộc', `Bạn cần thêm ${price - userLoc} Lộc nữa để rước món này về nhà!`);
-            }
-        }
-
-        function toggleHong(btn) {
-            const countSpan = btn.querySelector('.hong-count');
-            let count = parseInt(countSpan.innerText);
-            
-            if (btn.classList.contains('active')) {
-                btn.classList.remove('active');
-                count--;
-            } else {
-                btn.classList.add('active');
-                count++;
-            }
-            countSpan.innerText = count;
-        }
-
-        function playGame(gameType) {
-            const games = {
-                'fishing': 'Bên suối chảy róc rách, bạn thả cần và kiên nhẫn đợi...',
-                'tea': 'Nhặt chút lá trà, thêm chút mật ong. Bạn đang pha một ấm trà ấm.',
-                'stars': 'Đêm nay trời trong, bạn đưa tay vẽ những chòm sao lên bầu trời.',
-                'story': 'Cuốn sổ mở ra, bạn đọc lại dòng chữ người trước để lại và cầm bút lên...'
-            };
-            showAlert(`Mini-game: ${gameType.toUpperCase()}`, games[gameType] + "<br><br><i>(Tính năng đang được phát triển, hệ thống tặng bạn 5 Lộc trải nghiệm!)</i>");
-            
-            setTimeout(() => {
-                userLoc += 5;
-                document.getElementById('userLoc').innerText = userLoc;
-            }, 1000);
-        }
-
-        function renameHouse() {
-            let cost = hasRenamedHouse ? 20 : 0;
-            
-            if (cost > 0 && userLoc < cost) {
-                showAlert('Lưu ý', `Đổi tên lần này tốn 20 Lộc. Bạn hiện không đủ Lộc.`);
-                return;
-            }
-
-            let newName = prompt(`Nhập tên mới cho nhà của bạn (Phí: ${cost} Lộc):`, document.getElementById('houseNameText').innerText);
-            if (newName && newName.trim() !== '') {
-                document.getElementById('houseNameText').innerText = newName;
-                if (cost > 0) {
-                    userLoc -= cost;
-                    document.getElementById('userLoc').innerText = userLoc;
-                }
-                hasRenamedHouse = true;
-                showToast("Đổi tên bảng hiệu thành công!");
-            }
-        }
-
-        // === HỆ THỐNG ĐĂNG NHẬP / ADMIN ===
-        let isLoggedIn = false;
-
-        function openLoginModal() {
-            document.getElementById('loginModal').classList.add('active');
-            if (isLoggedIn) {
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('profileForm').style.display = 'block';
-            } else {
-                document.getElementById('loginForm').style.display = 'block';
-                document.getElementById('profileForm').style.display = 'none';
-            }
-        }
-
-        function handleLogin() {
-            const user = document.getElementById('loginUsername').value;
-            const pass = document.getElementById('loginPassword').value;
-
-            if (user === '' || pass === '') {
-                alert("Vui lòng nhập tên định danh và mật mã.");
-                return;
-            }
-
-            // Kiểm tra quyền Admin dựa trên mật khẩu yêu cầu
+        // === 2. LOGIN & ADMIN SYSTEM ===
+        function openAdminLogin() {
+            let pass = prompt("Nhập mã truy cập Quản trị viên (Gợi ý: bhnt2006):");
             if (pass === 'bhnt2006') {
-                isAdmin = true;
-                document.body.classList.add('is-admin');
-                document.getElementById('adminAddRoomArea').classList.remove('hidden');
-                document.getElementById('adminEditShopArea').classList.remove('hidden');
-                showToast("Đăng nhập quyền Quản lý Quán Trọ.");
-            } else {
-                isAdmin = false;
-                document.body.classList.remove('is-admin');
-                document.getElementById('adminAddRoomArea').classList.add('hidden');
-                document.getElementById('adminEditShopArea').classList.add('hidden');
+                isAdmin = true; isLogged = true;
+                document.body.classList.add('admin-mode');
+                document.getElementById('headerName').innerText = "ADMIN QUÁN TRỌ";
+                document.getElementById('headerRole').innerText = "Quyền tối cao";
+                document.getElementById('btnOpenDash').style.display = 'block';
+                alert("Đăng nhập Admin thành công!");
+                renderRooms(); // Hiện nút edit
             }
+        }
 
-            isLoggedIn = true;
-            document.getElementById('userName').innerText = user;
-            document.getElementById('profileName').value = user;
-            closeModal('loginModal');
-            showToast(`Chào mừng ${user} đến Nhà Trọ!`);
+        function toggleDashboard(show) {
+            document.getElementById('adminDash').classList.toggle('show-dash', show);
+            if(show) renderAdminMusic();
+        }
+
+        function openUserModal() {
+            document.getElementById('userModal').classList.add('active');
+            if(isLogged) {
+                document.getElementById('loginView').style.display = 'none';
+                document.getElementById('profileView').style.display = 'block';
+                document.getElementById('modalTitle').innerText = "Thông Tin Của Bạn";
+            } else {
+                document.getElementById('loginView').style.display = 'block';
+                document.getElementById('profileView').style.display = 'none';
+                document.getElementById('modalTitle').innerText = "Đăng Nhập Khách";
+            }
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function doLogin() {
+            const user = document.getElementById('loginUser').value;
+            if(!user) return alert("Vui lòng nhập tên!");
+            isLogged = true;
+            document.getElementById('headerName').innerText = user;
+            document.getElementById('profileNameInp').value = user;
+            document.getElementById('headerRole').innerText = "Khách quen";
+            document.getElementById('modalAvatarPreview').src = document.getElementById('headerAvatar').src;
+            closeModal('userModal');
+            alert(`Chào mừng ${user} đến với Quán Trọ!`);
+        }
+
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('modalAvatarPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
         }
 
         function saveProfile() {
-            const newName = document.getElementById('profileName').value;
-            document.getElementById('userName').innerText = newName;
-            closeModal('loginModal');
-            showToast("Đã lưu thông tin cá nhân.");
+            const name = document.getElementById('profileNameInp').value;
+            const avaSrc = document.getElementById('modalAvatarPreview').src;
+            document.getElementById('headerName').innerText = name;
+            document.getElementById('headerAvatar').src = avaSrc;
+            closeModal('userModal');
         }
 
-        function handleLogout() {
-            isLoggedIn = false;
-            isAdmin = false;
-            document.body.classList.remove('is-admin');
-            document.getElementById('userName').innerText = "Khách Vãng Lai";
-            document.getElementById('adminAddRoomArea').classList.add('hidden');
-            document.getElementById('adminEditShopArea').classList.add('hidden');
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            closeModal('loginModal');
-            showToast("Bạn đã rời khỏi Nhà Trọ.");
+        function doLogout() {
+            isLogged = false; isAdmin = false;
+            document.body.classList.remove('admin-mode');
+            document.getElementById('btnOpenDash').style.display = 'none';
+            document.getElementById('headerName').innerText = "Khách Vãng Lai";
+            document.getElementById('headerRole').innerText = "Đăng nhập ngay";
+            closeModal('userModal');
+            renderRooms();
         }
 
 
-        // === TIỆN ÍCH UI ===
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
+        // === 3. XỬ LÝ PHÒNG (RENDER & ADMIN) ===
+        function renderRooms() {
+            const topGrid = document.getElementById('topRoomsGrid');
+            const otherGrid = document.getElementById('otherRoomsGrid');
+            topGrid.innerHTML = ''; otherGrid.innerHTML = '';
+
+            // Sắp xếp theo ghim 1-2-3
+            let pinned = rooms.filter(r => r.rank > 0 && r.status === 'wait').sort((a,b) => a.rank - b.rank);
+            // Các phòng còn lại. Quy tắc: phòng done luôn nằm cuối
+            let others = rooms.filter(r => !pinned.includes(r));
+            others.sort((a,b) => {
+                if(a.status === 'done' && b.status !== 'done') return 1;
+                if(b.status === 'done' && a.status !== 'done') return -1;
+                return 0; // Chỗ này có thể kết hợp với bộ lọc Mới nhất / Hóng
+            });
+
+            pinned.forEach(r => topGrid.innerHTML += createRoomHTML(r));
+            others.forEach(r => otherGrid.innerHTML += createRoomHTML(r));
         }
 
-        function showAlert(title, message) {
-            document.getElementById('alertTitle').innerText = title;
-            document.getElementById('alertMessage').innerHTML = message;
-            document.getElementById('alertModal').classList.add('active');
+        function createRoomHTML(r) {
+            let badgeHtml = r.rank > 0 ? `<div class="room-badge-top">${r.rank}</div>` : '';
+            let statusHtml = r.status === 'wait' 
+                ? `<div class="room-status status-wait">Sắp ra mắt</div>` 
+                : `<div class="room-status status-done">Đã hoàn thành</div>`;
+            
+            let actionHtml = r.status === 'wait'
+                ? `<button class="btn-hong" onclick="alert('Đã thêm lửa hóng!')"><i class="ri-fire-fill"></i> ${r.hong} Hóng</button>`
+                : `<a href="${r.link}" target="_blank" class="text-[var(--primary)] font-bold underline">🔗 Vào Xem Phòng</a>`;
+
+            let adminBtn = `<button class="admin-edit-card" onclick="alert('Admin: Mở form sửa phòng ${r.id}')"><i class="ri-edit-line"></i></button>`;
+
+            let opacity = r.status === 'done' ? 'opacity: 0.7;' : '';
+
+            return `
+            <article class="room-card" style="${opacity}">
+                ${adminBtn}
+                ${badgeHtml}
+                ${statusHtml}
+                <img src="${r.img}" class="room-img" alt="Ảnh phòng">
+                <div class="room-info">
+                    <span class="room-tag">${r.tag}</span>
+                    <h3>${r.title}</h3>
+                    <p class="room-note">${r.note}</p>
+                    <p class="room-idea">"${r.idea}"</p>
+                    <div class="room-bottom">
+                        ${actionHtml}
+                    </div>
+                </div>
+            </article>`;
         }
 
-        // Tạo Toast Notification đơn giản
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-[var(--card-bg)] text-[var(--text-color)] border border-[var(--primary-color)] px-6 py-3 rounded-full shadow-lg z-[9999] transition-opacity duration-500 font-bold';
-            toast.innerText = message;
-            document.body.appendChild(toast);
+        function adminAddOrUpdateRoom() {
+            const title = document.getElementById('adRoomTitle').value;
+            const rank = parseInt(document.getElementById('adRoomRank').value);
+            const status = document.getElementById('adRoomStatus').value;
+            const link = document.getElementById('adRoomLink').value;
 
-            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
-            setTimeout(() => { toast.remove(); }, 2500);
+            if(!title) return alert("Vui lòng nhập tên phòng!");
+
+            // Demo thêm mới vào mảng
+            rooms.push({
+                id: Date.now(), title: title, tag: 'Mới tạo', note: 'Mô tả trống', idea: 'Ý tưởng trống',
+                img: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600',
+                rank: rank, status: status, link: link, hong: 0
+            });
+            alert("Đã cập nhật hệ thống phòng!");
+            renderRooms();
+        }
+
+        // === 4. TRANG TRÍ SÂN VƯỜN (DRAGGABILLY) ===
+        function initDraggables() {
+            // Biến các object có sẵn thành draggable
+            document.querySelectorAll('.deco-item').forEach(makeDraggable);
+        }
+        function makeDraggable(el) {
+            let draggie = new Draggabilly(el, { containment: '#houseStage' });
+            draggies.push(draggie);
+        }
+        function addDeco(icon) {
+            const stage = document.getElementById('houseStage');
+            const el = document.createElement('div');
+            el.className = 'deco-item';
+            el.innerHTML = icon;
+            // Sinh ở giữa khung
+            el.style.top = '200px'; el.style.left = '50%';
+            stage.appendChild(el);
+            makeDraggable(el);
+            alert("Đã đặt vật phẩm ra vườn! Nhấn giữ và kéo để di chuyển.");
+        }
+        function renameHouse() {
+            let newName = prompt("Tên bảng hiệu mới của bạn:", document.getElementById('houseTitle').innerText);
+            if(newName) document.getElementById('houseTitle').innerText = newName;
+        }
+
+        // === 5. CỬA HÀNG & LỘC ===
+        function renderShop() {
+            const grid = document.getElementById('shopGrid');
+            grid.innerHTML = '';
+            shopItems.forEach(item => {
+                grid.innerHTML += `
+                <div class="glass-panel p-4 text-center cursor-pointer hover:border-[var(--primary)] transition" onclick="buyItem(${item.price}, '${item.icon}')">
+                    <div class="text-4xl mb-2">${item.icon}</div>
+                    <h4 class="font-bold text-sm">${item.name}</h4>
+                    <div class="text-[var(--loc-color)] font-bold text-xs mt-2"><i class="ri-leaf-fill"></i> ${item.price} Lộc</div>
+                </div>`;
+            });
+        }
+        function giveLoc(amount) {
+            if(!isLogged) return alert("Vui lòng đăng nhập để nhận Lộc!");
+            myLoc += amount;
+            document.getElementById('locCount').innerText = myLoc;
+            alert(`Bạn nhận được ${amount} Lộc!`);
+        }
+        function buyItem(price, icon) {
+            if(!isLogged) return alert("Vui lòng đăng nhập!");
+            if(myLoc >= price) {
+                myLoc -= price;
+                document.getElementById('locCount').innerText = myLoc;
+                alert("Mua thành công! Vật phẩm đã được thêm vào kho nhà bạn.");
+                // Thêm vào inventory HTML
+                document.getElementById('inventory').innerHTML += `<div class="inv-item" onclick="addDeco('${icon}')">${icon}</div>`;
+            } else {
+                alert("Bạn không có đủ Lộc!");
+            }
+        }
+
+        function adminAddItem() {
+            const icon = document.getElementById('adItemIcon').value;
+            const name = document.getElementById('adItemName').value;
+            const price = document.getElementById('adItemPrice').value;
+            if(!icon || !name || !price) return alert("Điền đủ thông tin!");
+            shopItems.push({icon, name, price: parseInt(price)});
+            renderShop();
+            alert("Đã thêm vào cửa hàng!");
+        }
+
+        // === 6. MUSIC PLAYER ===
+        let audio = document.getElementById('audioPlayer');
+        let playQueue = [];
+        let currIdx = 0;
+        let isPlaying = false;
+
+        function initMusic() {
+            shufflePlaylist();
+            renderMusicUI();
+            
+            audio.addEventListener('timeupdate', () => {
+                if(audio.duration) {
+                    document.getElementById('pFill').style.width = (audio.currentTime / audio.duration * 100) + '%';
+                    document.getElementById('mCurr').innerText = fmtTime(audio.currentTime);
+                }
+            });
+            audio.addEventListener('loadedmetadata', () => {
+                document.getElementById('mDur').innerText = fmtTime(audio.duration);
+            });
+            audio.addEventListener('ended', playNext);
+        }
+
+        function shufflePlaylist() {
+            playQueue = [...playlist].sort(() => Math.random() - 0.5);
+            currIdx = 0;
+            if(playQueue.length > 0) audio.src = playQueue[0].src;
+        }
+
+        function renderMusicUI() {
+            const pl = document.getElementById('playlistUI');
+            pl.innerHTML = '';
+            playQueue.forEach((s, i) => {
+                let cl = i === currIdx ? 'active' : '';
+                pl.innerHTML += `
+                <div class="song-item ${cl}" onclick="playSpec(${i})">
+                    <strong>${s.title}</strong>
+                    <span>${s.artist}</span>
+                </div>`;
+            });
+        }
+
+        function toggleMusicPanel() { document.getElementById('musicPanel').classList.toggle('show'); }
+        
+        function togglePlay() {
+            if(playQueue.length === 0) return;
+            if(audio.paused) {
+                audio.play(); isPlaying = true;
+                document.getElementById('vinylBtn').classList.add('playing');
+                document.querySelector('.vinyl-label').parentElement.classList.add('spin');
+                document.getElementById('btnPlayPause').innerHTML = '<i class="ri-pause-circle-fill"></i>';
+            } else {
+                audio.pause(); isPlaying = false;
+                document.getElementById('vinylBtn').classList.remove('playing');
+                document.querySelector('.vinyl-label').parentElement.classList.remove('spin');
+                document.getElementById('btnPlayPause').innerHTML = '<i class="ri-play-circle-fill"></i>';
+            }
+        }
+
+        function playSpec(i) {
+            currIdx = i; audio.src = playQueue[i].src;
+            renderMusicUI();
+            if(isPlaying) audio.play();
+            else togglePlay();
+        }
+
+        function playNext() {
+            currIdx++;
+            if(currIdx >= playQueue.length) { shufflePlaylist(); } // Hết bài -> Trộn lại
+            else { audio.src = playQueue[currIdx].src; }
+            renderMusicUI();
+            audio.play(); isPlaying = true;
+        }
+
+        function seekAudio(e) {
+            const w = document.getElementById('pBar').clientWidth;
+            audio.currentTime = (e.offsetX / w) * audio.duration;
+        }
+
+        function fmtTime(s) {
+            let m = Math.floor(s/60); let sec = Math.floor(s%60);
+            return `${m}:${sec<10?'0':''}${sec}`;
+        }
+
+        // Admin Nhạc
+        function adminAddSong() {
+            const src = document.getElementById('adSongLink').value;
+            const title = document.getElementById('adSongName').value;
+            const artist = document.getElementById('adSongArtist').value;
+            if(!src || !title) return alert("Link và Tên không được bỏ trống!");
+            
+            playlist.push({title, artist: artist||"Unknown", src});
+            shufflePlaylist(); renderMusicUI(); renderAdminMusic();
+            alert("Đã tải bài nhạc lên!");
+        }
+        function renderAdminMusic() {
+            const ul = document.getElementById('adSongListUI');
+            ul.innerHTML = '';
+            playlist.forEach((s, i) => {
+                ul.innerHTML += `
+                <div class="admin-list-item">
+                    <div>
+                        <div class="font-bold text-sm text-white">${s.title}</div>
+                        <div class="text-xs text-gray-400">${s.artist}</div>
+                    </div>
+                    <button class="btn-small bg-red-600" onclick="alert('Xóa bài này!')">Xóa</button>
+                </div>`;
+            });
         }
 
     </script>
