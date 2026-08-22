@@ -4,232 +4,679 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quán Trọ Nhà Mèo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     <style>
-        :root {
-            --bg-color: #eaf4f4;
-            --text-color: #2c3e50;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --primary: #52b788;
-            --accent: #2d6a4f;
-        }
-        [data-theme="night"] {
-            --bg-color: #0f172a;
-            --text-color: #e2e8f0;
-            --card-bg: rgba(30, 41, 59, 0.9);
-            --primary: #38bdf8;
-            --accent: #0ea5e9;
-        }
-        body {
-            margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-color); color: var(--text-color);
-            transition: background 0.4s ease, color 0.4s ease; min-height: 100vh;
-        }
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 30px; background: var(--card-bg); backdrop-filter: blur(8px);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100;
-        }
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-area img { height: 48px; width: 48px; border-radius: 50%; object-fit: cover; }
-        .logo-area h1 { margin: 0; font-size: 20px; color: var(--accent); }
-        .actions { display: flex; align-items: center; gap: 10px; }
-        .btn {
-            background: var(--primary); color: white; border: none;
-            padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold;
-        }
-        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
-        .section-title { border-bottom: 2px solid var(--primary); padding-bottom: 6px; margin: 30px 0 20px; font-size: 18px; }
-        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .room-card {
-            background: var(--card-bg); border-radius: 12px; padding: 18px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .room-badge { background: #fef08a; color: #854d0e; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; width: fit-content; margin-bottom: 8px; }
-        .room-completed { opacity: 0.75; }
-        .tag { color: var(--primary); font-weight: bold; font-size: 13px; }
-        
-        /* Hộp nhạc */
-        .music-player { position: fixed; bottom: 25px; right: 25px; z-index: 999; display: flex; flex-direction: column; align-items: flex-end; }
-        .vinyl {
-            width: 55px; height: 55px; background: #1e293b; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid var(--primary);
-        }
-        .vinyl-core { width: 18px; height: 18px; background: var(--primary); border-radius: 50%; }
-        .spin { animation: spin 4s linear infinite; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: all 0.5s ease; overflow-x: hidden; }
+        .dark { background-color: #0f172a; color: #f8fafc; }
+        .light { background-color: #dcfce7; color: #0f172a; background-image: linear-gradient(180deg, #dcfce7 0%, #e0f2fe 100%); }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 4px; }
+        .record-spin { animation: spin 4s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        .music-panel {
-            background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 12px;
-            width: 220px; display: none; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-        .music-panel.active { display: block; }
-        
-        /* Hiệu ứng nền */
-        .effect-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1; }
-        .floating-item { position: absolute; font-size: 18px; animation: float 6s infinite linear; }
-        @keyframes float {
-            0% { transform: translateY(0); opacity: 0; }
-            50% { opacity: 0.8; }
-            100% { transform: translateY(-100px); opacity: 0; }
-        }
+        .pixel-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; width: 100%; max-width: 400px; aspect-ratio: 1; background: rgba(255,255,255,0.2); padding: 5px; border-radius: 8px; }
+        .pixel-cell { background: rgba(255,255,255,0.4); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; transition: all 0.2s; }
+        .pixel-cell:hover { background: rgba(255,255,255,0.8); }
     </style>
 </head>
 <body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+        const { motion, AnimatePresence } = window.Motion;
 
-    <div class="effect-layer" id="effectLayer"></div>
+        // --- CUSTOM HOOKS ---
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) { return initialValue; }
+            });
+            const setValue = (value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) { console.error(error); }
+            };
+            return [storedValue, setValue];
+        }
 
-    <header>
-        <div class="logo-area">
-            <img src="ChatGPT_Image_21_56_27_31_thg_7__2026-removebg-preview.png" alt="Logo" onerror="this.src='https://placehold.co/100x100?text=CatLogo'">
-            <h1>Quán Trọ Nhà Mèo</h1>
-        </div>
-        <div class="actions">
-            <span>🍀 <b id="locCount">10</b></span>
-            <button class="btn" onclick="toggleTheme()">☀️/🌙</button>
-            <button class="btn" onclick="loginAdmin()">Admin</button>
-        </div>
-    </header>
-
-    <div class="container">
-        <h2 class="section-title">📌 Bảng Ghim Top 3 Sắp Ra Mắt</h2>
-        <div class="room-grid" id="pinnedGrid"></div>
-
-        <h2 class="section-title">🌸 Danh Sách Phòng</h2>
-        <div style="margin-bottom: 15px;">
-            <select id="sortSelect" onchange="renderRooms()" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc;">
-                <option value="newest">Sắp xếp: Mới nhất</option>
-                <option value="votes">Sắp xếp: Nhiều lượt vote nhất</option>
-            </select>
-        </div>
-        <div class="room-grid" id="generalGrid"></div>
-    </div>
-
-    <div class="music-player">
-        <div class="music-panel" id="musicPanel">
-            <b id="songTitle">Giai Điệu Nhà Mèo</b><br>
-            <small style="opacity: 0.7;">Nhạc Thư Giãn</small>
-            <div style="display: flex; justify-content: center; gap: 15px; margin-top: 10px; font-size: 20px; cursor: pointer;">
-                <span id="playBtn" onclick="togglePlay()">⏸</span>
-            </div>
-        </div>
-        <div class="vinyl spin" id="vinyl" onclick="togglePanel()">
-            <div class="vinyl-core"></div>
-        </div>
-    </div>
-
-    <script>
-        let rooms = [
-            { id: 1, name: "Thư Viện Phép Thuật", tag: "Fantasy", note: "Ra mắt 15/9", plot: "Căn phòng bí mật giữa rừng...", votes: 120, pinned: 1, completed: false, link: "" },
-            { id: 2, name: "Hoàng Cung Trầm Mặc", tag: "Cổ đại", note: "Ra mắt 20/9", plot: "Cuộc sống bình yên chốn thâm cung...", votes: 210, pinned: 2, completed: false, link: "" },
-            { id: 3, name: "Tiệm Trà Mùa Thu", tag: "Chữa lành", note: "Ra mắt 25/9", plot: "Nơi chia sẻ tâm sự mỗi tối...", votes: 85, pinned: 3, completed: false, link: "" },
-            { id: 4, name: "Chuyến Tàu Đêm", tag: "Bí ẩn", note: "Tháng 10", plot: "Hành trình không bến đỗ...", votes: 340, pinned: 0, completed: false, link: "" },
-            { id: 5, name: "Quán Trọ Mèo 01", tag: "Tâm sự", note: "Đã mở cửa", plot: "Phòng chat đầu tiên...", votes: 500, pinned: 0, completed: true, link: "https://google.com" }
+        // --- MOCK DATA INITIALIZATION ---
+        const initialRooms = [
+            { id: 1, title: 'Phòng Trà Sữa', tag: 'Chill', note: 'View biển', idea: 'Nơi trò chuyện', votes: 15, completed: false, url: '', createdAt: Date.now() },
+            { id: 2, title: 'Góc Đọc Sách', tag: 'Aesthetic', note: 'Yên tĩnh', idea: 'Nghe lo-fi', votes: 20, completed: false, url: '', createdAt: Date.now() - 1000 },
+            { id: 3, title: 'Vườn Đom Đóm', tag: 'Nature', note: 'Chỉ mở ban đêm', idea: 'Ngắm sao', votes: 10, completed: false, url: '', createdAt: Date.now() - 2000 }
+        ];
+        const initialMusic = [
+            { id: 1, title: 'Spring Day', artist: 'Lofi', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3' },
+            { id: 2, title: 'Night Sky', artist: 'Chill', url: 'https://cdn.pixabay.com/download/audio/2022/04/27/audio_6fb44a1e9e.mp3' }
+        ];
+        const initialShop = [
+            { id: 1, name: 'Giường Gỗ', type: 'decor', price: 50, icon: '🛏️' },
+            { id: 2, name: 'Bàn Trà', type: 'decor', price: 30, icon: '🪑' },
+            { id: 3, name: 'Mèo Mập', type: 'pet', price: 100, icon: '🐈' },
+            { id: 4, name: 'Cây Sồi', type: 'plant', price: 40, icon: '🌳' },
+            { id: 5, name: 'Hoa Cúc', type: 'plant', price: 20, icon: '🌼' }
         ];
 
-        function renderRooms() {
-            const pinnedContainer = document.getElementById('pinnedGrid');
-            const generalContainer = document.getElementById('generalGrid');
-            const sortBy = document.getElementById('sortSelect').value;
+        // --- COMPONENTS ---
+        
+        const BackgroundEffects = ({ isDark }) => {
+            const elements = useMemo(() => Array.from({ length: 15 }).map((_, i) => ({
+                id: i,
+                x: Math.random() * window.innerWidth,
+                duration: 5 + Math.random() * 10,
+                delay: Math.random() * 5,
+                size: Math.random() * 10 + 10
+            })), [isDark]);
 
-            pinnedContainer.innerHTML = '';
-            generalContainer.innerHTML = '';
+            return (
+                <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                    {elements.map(el => (
+                        <motion.div
+                            key={el.id}
+                            initial={{ y: -50, x: el.x, opacity: 0 }}
+                            animate={{ y: window.innerHeight + 50, x: el.x + (Math.random() * 100 - 50), opacity: [0, 1, 0] }}
+                            transition={{ duration: el.duration, delay: el.delay, repeat: Infinity, ease: "linear" }}
+                            className="absolute"
+                            style={{ fontSize: el.size }}
+                        >
+                            {isDark ? (Math.random() > 0.5 ? '✨' : '🌙') : (Math.random() > 0.5 ? '🍃' : '🌸')}
+                        </motion.div>
+                    ))}
+                </div>
+            );
+        };
 
-            // Ghim Top 3
-            rooms.filter(r => r.pinned > 0).sort((a,b) => a.pinned - b.pinned).forEach(room => {
-                pinnedContainer.innerHTML += buildCardHTML(room);
-            });
+        const HiddenItemSpawner = ({ onFind }) => {
+            const [item, setItem] = useState(null);
+            
+            useEffect(() => {
+                const spawn = () => {
+                    if (Math.random() > 0.3) {
+                        setItem({
+                            x: Math.random() * 80 + 10,
+                            y: Math.random() * 80 + 10,
+                            icon: Math.random() > 0.5 ? '🍃' : '🗝️'
+                        });
+                    }
+                    setTimeout(spawn, 10000 + Math.random() * 15000);
+                };
+                const timer = setTimeout(spawn, 5000);
+                return () => clearTimeout(timer);
+            }, []);
 
-            // Danh sách chung: Đã hoàn thành tự động xuống dưới cùng
-            let general = rooms.filter(r => r.pinned === 0);
-            general.sort((a, b) => {
-                if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                return sortBy === 'votes' ? b.votes - a.votes : b.id - a.id;
-            });
+            if (!item) return null;
 
-            general.forEach(room => {
-                generalContainer.innerHTML += buildCardHTML(room);
-            });
-        }
+            return (
+                <motion.div 
+                    initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    className="fixed z-50 cursor-pointer text-3xl drop-shadow-lg"
+                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                    onClick={() => { onFind(5); setItem(null); alert('Bạn đã tìm thấy vật thất lạc! +5 🍀'); }}
+                >
+                    {item.icon}
+                </motion.div>
+            );
+        };
 
-        function buildCardHTML(room) {
-            return `
-                <div class="room-card ${room.completed ? 'room-completed' : ''}">
-                    <div>
-                        ${room.pinned > 0 ? `<div class="room-badge">Top ${room.pinned}</div>` : ''}
-                        <h3 style="margin: 0 0 5px 0;">${room.name}</h3>
-                        <div class="tag">#${room.tag}</div>
-                        <p style="font-size: 13px; margin: 8px 0;">📝 ${room.note}</p>
-                        <p style="font-size: 13px; font-style: italic; opacity: 0.8;">"${room.plot}"</p>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                        <span>❤️ ${room.votes}</span>
-                        ${room.completed 
-                            ? `<a href="${room.link}" target="_blank"><button class="btn" style="background:#2d6a4f;">Vào Phòng</button></a>`
-                            : `<button class="btn" onclick="vote(${room.id})">Chấm hóng</button>`
-                        }
+        const MusicPlayer = ({ isDark, musicList }) => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [currentIdx, setCurrentIdx] = useState(0);
+            const [expanded, setExpanded] = useState(false);
+            const audioRef = useRef(new Audio());
+            const [progress, setProgress] = useState(0);
+
+            useEffect(() => {
+                const audio = audioRef.current;
+                if (musicList.length === 0) return;
+                audio.src = musicList[currentIdx].url;
+                if (isPlaying) audio.play().catch(() => setIsPlaying(false));
+                
+                audio.ontimeupdate = () => setProgress((audio.currentTime / audio.duration) * 100 || 0);
+                audio.onended = () => {
+                    setCurrentIdx((prev) => (prev + 1) % musicList.length);
+                };
+                return () => { audio.pause(); };
+            }, [currentIdx, musicList]);
+
+            useEffect(() => {
+                isPlaying ? audioRef.current.play().catch(() => setIsPlaying(false)) : audioRef.current.pause();
+            }, [isPlaying]);
+
+            return (
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+                    <AnimatePresence>
+                        {expanded && (
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                                className={`mb-4 p-4 rounded-xl shadow-xl w-64 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+                                <h3 className="font-bold border-b pb-2 mb-2">Giai Điệu Quán Trọ 🎶</h3>
+                                <div className="max-h-32 overflow-y-auto custom-scroll mb-2">
+                                    {musicList.map((song, i) => (
+                                        <div key={song.id} onClick={() => {setCurrentIdx(i); setIsPlaying(true);}} 
+                                            className={`p-2 text-sm cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 rounded ${i === currentIdx ? 'text-blue-500 font-bold' : ''}`}>
+                                            {song.title} - {song.artist}
+                                        </div>
+                                    ))}
+                                </div>
+                                <input type="range" min="0" max="100" value={progress} 
+                                    onChange={(e) => {
+                                        const audio = audioRef.current;
+                                        audio.currentTime = (e.target.value / 100) * audio.duration;
+                                    }} 
+                                    className="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    <div className="relative">
+                        {isPlaying && <motion.div animate={{ y: [-10, -30], opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 1 }} className="absolute -top-4 right-2 text-xl">🎵</motion.div>}
+                        <div onClick={() => setExpanded(!expanded)} className={`w-14 h-14 rounded-full flex items-center justify-center cursor-pointer shadow-xl border-4 ${isDark ? 'bg-black border-slate-700' : 'bg-gray-800 border-gray-300'} ${isPlaying ? 'record-spin' : ''}`}>
+                            <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }} className="absolute -bottom-2 -left-2 bg-white text-black rounded-full p-1 shadow">
+                            {isPlaying ? '⏸' : '▶'}
+                        </button>
                     </div>
                 </div>
-            `;
-        }
+            );
+        };
 
-        function vote(id) {
-            const r = rooms.find(item => item.id === id);
-            if (r) {
-                r.votes += 1;
-                let loc = parseInt(document.getElementById('locCount').innerText);
-                document.getElementById('locCount').innerText = loc + 1;
-                alert('Đã chấm hóng thành công! Nhận được +1 Lộc 🍀');
-                renderRooms();
-            }
-        }
+        const RoomCard = ({ room, onVote, onComplete, isAdmin }) => (
+            <motion.div whileHover={{ scale: 1.02 }} className="bg-white/30 dark:bg-slate-800/50 p-4 rounded-xl shadow-lg backdrop-blur-sm border border-white/20 relative">
+                {room.completed && <div className="absolute top-0 right-0 bg-green-500 text-white text-xs px-2 py-1 rounded-bl-lg rounded-tr-xl">Đã hoàn thành</div>}
+                <div className="flex gap-4">
+                    <div className="w-24 h-24 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center text-3xl overflow-hidden">
+                        {room.url ? <img src={room.url} alt="Room" className="w-full h-full object-cover"/> : '🏠'}
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="font-bold text-lg">{room.title}</h3>
+                        <span className="text-xs bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">{room.tag}</span>
+                        <p className="text-sm mt-2">📝 {room.note}</p>
+                        <p className="text-sm italic text-gray-600 dark:text-gray-400">💡 {room.idea}</p>
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-between items-center">
+                    <button onClick={() => onVote(room.id)} className="flex items-center gap-1 bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded-full text-sm transition">
+                        🌸 Chấm hóng ({room.votes})
+                    </button>
+                    {isAdmin && !room.completed && (
+                        <button onClick={() => {
+                            const url = prompt('Nhập URL ảnh kết quả (nếu có):');
+                            onComplete(room.id, url);
+                        }} className="text-xs bg-green-600 text-white px-2 py-1 rounded">Đánh dấu Xong</button>
+                    )}
+                </div>
+            </motion.div>
+        );
 
-        function toggleTheme() {
-            const isNight = document.body.getAttribute('data-theme') === 'night';
-            document.body.setAttribute('data-theme', isNight ? 'day' : 'night');
-            spawnEffects();
-        }
+        const GamesTab = ({ user, setUser, isDark }) => {
+            const [activeGame, setActiveGame] = useState(null);
 
-        function spawnEffects() {
-            const layer = document.getElementById('effectLayer');
-            layer.innerHTML = '';
-            const isNight = document.body.getAttribute('data-theme') === 'night';
-            const icon = isNight ? '✨' : '🍃';
-            for(let i = 0; i < 12; i++) {
-                const el = document.createElement('div');
-                el.className = 'floating-item';
-                el.innerText = icon;
-                el.style.left = Math.random() * 95 + 'vw';
-                el.style.top = Math.random() * 90 + 'vh';
-                el.style.animationDelay = (Math.random() * 3) + 's';
-                layer.appendChild(el);
-            }
-        }
+            const games = [
+                { id: 'garden', name: 'Chăm Vườn', icon: '🌱' },
+                { id: 'fish', name: 'Câu Cá', icon: '🎣' },
+                { id: 'star', name: 'Vườn Sao', icon: '🌙', nightOnly: true },
+                { id: 'diary', name: 'Nhật Ký', icon: '📖' },
+                { id: 'story', name: 'Kể Truyện', icon: '📜' },
+                { id: 'puzzle', name: 'Câu Đố', icon: '🧩' },
+                { id: 'tea', name: 'Pha Trà', icon: '🍵' },
+            ];
 
-        let isPlaying = true;
-        function togglePanel() { document.getElementById('musicPanel').classList.toggle('active'); }
-        function togglePlay() {
-            isPlaying = !isPlaying;
-            document.getElementById('playBtn').innerText = isPlaying ? '⏸' : '▶';
-            document.getElementById('vinyl').classList.toggle('spin', isPlaying);
-        }
+            const addLoc = (amount, reason) => {
+                setUser(prev => ({ ...prev, loc: prev.loc + amount }));
+                alert(`Nhận được ${amount} 🍀 từ: ${reason}`);
+            };
 
-        function loginAdmin() {
-            const pass = prompt('Nhập mật khẩu Admin:');
-            if (pass === 'bhnt2006') {
-                const name = prompt('Nhập tên phòng mới:');
-                if (name) {
-                    rooms.push({ id: Date.now(), name: name, tag: "Mới", note: "Vừa thêm", plot: "Mô tả...", votes: 0, pinned: 0, completed: false, link: "" });
-                    renderRooms();
-                    alert('Đã thêm phòng mới thành công!');
+            // Mini Game: Garden
+            const Garden = () => {
+                const [plots, setPlots] = useLocalStorage('garden_plots', Array(4).fill({ stage: 0, water: 0 }));
+                const plant = (idx) => {
+                    const newPlots = [...plots];
+                    if (newPlots[idx].stage === 0) newPlots[idx] = { stage: 1, water: 0 };
+                    setPlots(newPlots);
+                };
+                const water = (idx) => {
+                    const newPlots = [...plots];
+                    if (newPlots[idx].stage > 0 && newPlots[idx].stage < 3) {
+                        newPlots[idx].water += 1;
+                        if (newPlots[idx].water >= 2) {
+                            newPlots[idx].stage += 1;
+                            newPlots[idx].water = 0;
+                        }
+                    } else if (newPlots[idx].stage === 3) {
+                        newPlots[idx] = { stage: 0, water: 0 };
+                        addLoc(10, 'Thu hoạch nông sản');
+                    }
+                    setPlots(newPlots);
+                };
+                const getIcon = (stage) => ['🟫', '🌱', '🌿', '🍎'][stage];
+                return (
+                    <div className="grid grid-cols-2 gap-4 w-64 mx-auto">
+                        {plots.map((p, i) => (
+                            <div key={i} onClick={() => p.stage === 0 ? plant(i) : water(i)} className="h-24 bg-amber-700/50 rounded-xl flex items-center justify-center text-4xl cursor-pointer hover:bg-amber-600/50 transition border-4 border-amber-900/50 relative">
+                                {getIcon(p.stage)}
+                                {p.stage > 0 && p.stage < 3 && <div className="absolute bottom-1 text-xs text-white">💧 {p.water}/2</div>}
+                            </div>
+                        ))}
+                        <p className="col-span-2 text-center text-sm">Click đất để trồng, click cây để tưới/thu hoạch.</p>
+                    </div>
+                );
+            };
+
+            // Mini Game: Fishing
+            const Fishing = () => {
+                const [status, setStatus] = useState('Sẵn sàng');
+                const [fishList, setFishList] = useLocalStorage('fish_collection', []);
+                const fishDb = [{n: 'Cá thường', i: '🐠', r: 0.6}, {n: 'Cá hiếm', i: '🐡', r: 0.3}, {n: 'Huyền thoại', i: '🦈', r: 0.1}];
+                const fish = () => {
+                    setStatus('Đang đợi cá cắn câu...');
+                    setTimeout(() => {
+                        const rand = Math.random();
+                        let caught = fishDb[0];
+                        if (rand > 0.9) caught = fishDb[2];
+                        else if (rand > 0.6) caught = fishDb[1];
+                        
+                        setStatus(`Bắt được ${caught.n} ${caught.i}!`);
+                        setFishList([...fishList, caught.i]);
+                        addLoc(caught.r === 0.1 ? 20 : (caught.r === 0.3 ? 10 : 5), 'Bán cá');
+                    }, 2000);
+                };
+                return (
+                    <div className="text-center">
+                        <div className="text-6xl mb-4 animate-bounce">🎣</div>
+                        <p className="mb-4">{status}</p>
+                        <button onClick={fish} disabled={status !== 'Sẵn sàng' && !status.includes('Bắt')} className="bg-blue-500 text-white px-6 py-2 rounded-full font-bold shadow-lg">Thả cần</button>
+                        <div className="mt-6">
+                            <h4 className="font-bold">Bộ sưu tập:</h4>
+                            <div className="flex flex-wrap gap-2 justify-center text-2xl mt-2">{fishList.map((f, i) => <span key={i}>{f}</span>)}</div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Mini Game: Tea
+            const Tea = () => {
+                const ingredients = [{id: 'tra', i: '🍵', n: 'Trà xanh'}, {id: 'hoa', i: '🌸', n: 'Hoa'}, {id: 'mat', i: '🍯', n: 'Mật ong'}, {id: 'sua', i: '🥛', n: 'Sữa'}];
+                const [sel, setSel] = useState([]);
+                const [recipes, setRecipes] = useLocalStorage('tea_recipes', []);
+                const mix = () => {
+                    if(sel.length !== 2) return alert('Chọn đúng 2 nguyên liệu!');
+                    const ids = sel.map(s => s.id).sort().join('-');
+                    let res = '';
+                    if(ids === 'hoa-tra') res = 'Trà Hoa Cúc 🫖';
+                    else if(ids === 'mat-tra') res = 'Trà Mật Ong 🍯🍵';
+                    else if(ids === 'sua-tra') res = 'Trà Sữa 🧋';
+                    else res = 'Nước rửa bát 🤢';
+                    
+                    alert(`Kết quả: ${res}`);
+                    if(!res.includes('rửa bát') && !recipes.includes(res)) {
+                        setRecipes([...recipes, res]);
+                        addLoc(15, 'Sáng tạo công thức trà');
+                    }
+                    setSel([]);
+                };
+                return (
+                    <div className="text-center">
+                        <div className="flex justify-center gap-4 mb-4">
+                            {ingredients.map(ing => (
+                                <button key={ing.id} onClick={() => sel.length < 2 && !sel.includes(ing) ? setSel([...sel, ing]) : setSel(sel.filter(s => s.id !== ing.id))}
+                                    className={`p-3 text-3xl rounded-xl transition ${sel.includes(ing) ? 'bg-green-400' : 'bg-gray-200 dark:bg-slate-700'}`}>{ing.i}</button>
+                            ))}
+                        </div>
+                        <button onClick={mix} className="bg-green-600 text-white px-6 py-2 rounded-full mb-4">Pha Trà</button>
+                        <h4 className="font-bold border-t pt-4">Công thức đã mở:</h4>
+                        <ul className="mt-2">{recipes.map((r,i) => <li key={i}>{r}</li>)}</ul>
+                    </div>
+                );
+            };
+
+            // Mini Game: Puzzle
+            const Puzzle = () => {
+                const q = { q: "Nếu bạn vượt qua người thứ 2 trong cuộc đua, bạn đứng thứ mấy?", opts: ["Thứ 1", "Thứ 2", "Thứ 3"], ans: 1 };
+                const ans = (i) => {
+                    if(i === q.ans) addLoc(20, 'Giải đố thông minh');
+                    else alert('Sai rồi! Cố lên nhé.');
+                };
+                return (
+                    <div className="text-center bg-white/20 p-6 rounded-xl">
+                        <h3 className="font-bold text-xl mb-4">{q.q}</h3>
+                        <div className="flex flex-col gap-2">
+                            {q.opts.map((o, i) => <button key={i} onClick={() => ans(i)} className="bg-purple-500 text-white py-2 rounded-lg">{o}</button>)}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    {!activeGame ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {games.map(g => (
+                                <button key={g.id} onClick={() => {
+                                    if(g.nightOnly && !isDark) return alert('Trò chơi này chỉ mở vào ban đêm (Chế độ Tối)!');
+                                    setActiveGame(g.id);
+                                }} className={`p-6 rounded-2xl shadow-md flex flex-col items-center justify-center gap-2 text-xl font-bold transition hover:-translate-y-1 ${g.nightOnly && !isDark ? 'opacity-50 grayscale cursor-not-allowed' : 'bg-white/40 dark:bg-slate-800/60 hover:shadow-xl'}`}>
+                                    <span className="text-4xl">{g.icon}</span>
+                                    {g.name}
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-white/40 dark:bg-slate-800/60 p-6 rounded-2xl shadow-xl">
+                            <button onClick={() => setActiveGame(null)} className="mb-4 text-sm bg-gray-500 text-white px-3 py-1 rounded">⬅ Quay lại</button>
+                            <h2 className="text-2xl font-bold text-center mb-6">{games.find(g => g.id === activeGame).icon} {games.find(g => g.id === activeGame).name}</h2>
+                            {activeGame === 'garden' && <Garden />}
+                            {activeGame === 'fish' && <Fishing />}
+                            {activeGame === 'tea' && <Tea />}
+                            {activeGame === 'puzzle' && <Puzzle />}
+                            {['star', 'diary', 'story'].includes(activeGame) && <div className="text-center italic">Minigame đang được Quán Trọ xây dựng thêm... Nhận tạm 5🍀 nhé! <br/><button onClick={()=>addLoc(5, 'Test game')} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Nhận Lộc</button></div>}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const HouseTab = ({ user, setUser }) => {
+            const [grid, setGrid] = useLocalStorage(`house_grid_${user?.username}`, Array(100).fill(null));
+            const [inventory, setInventory] = useLocalStorage(`inv_${user?.username}`, []);
+            const [selectedItem, setSelectedItem] = useState(null);
+
+            // Give default item if empty
+            useEffect(() => {
+                if(inventory.length === 0) setInventory([{id: 'def1', icon: '🛏️'}, {id: 'def2', icon: '🌳'}]);
+            }, []);
+
+            const handleCellClick = (idx) => {
+                if (!selectedItem) {
+                    if (grid[idx]) {
+                        const newGrid = [...grid];
+                        setInventory([...inventory, {id: Date.now(), icon: grid[idx]}]);
+                        newGrid[idx] = null;
+                        setGrid(newGrid);
+                    }
+                    return;
                 }
-            } else if (pass !== null) {
-                alert('Sai mật khẩu!');
-            }
-        }
+                const newGrid = [...grid];
+                newGrid[idx] = selectedItem.icon;
+                setGrid(newGrid);
+                setInventory(inventory.filter(i => i.id !== selectedItem.id));
+                setSelectedItem(null);
+            };
 
-        // Khởi chạy ban đầu
-        renderRooms();
-        spawnEffects();
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="bg-amber-800/80 text-amber-100 px-6 py-2 rounded-lg font-bold text-xl mb-6 shadow-lg border-2 border-amber-900">
+                        Nhà của {user.username}
+                    </div>
+                    
+                    <div className="pixel-grid shadow-2xl">
+                        {grid.map((cell, i) => (
+                            <div key={i} className="pixel-cell" onClick={() => handleCellClick(i)}>
+                                {cell}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="w-full max-w-md mt-8 bg-white/50 dark:bg-slate-800/50 p-4 rounded-xl">
+                        <h3 className="font-bold mb-2 text-center">Kho Đồ (Click để chọn/hủy, click vào đất để đặt)</h3>
+                        <div className="flex gap-2 overflow-x-auto custom-scroll p-2">
+                            {inventory.map(item => (
+                                <button key={item.id} onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
+                                    className={`w-12 h-12 text-2xl flex items-center justify-center rounded-lg border-2 transition ${selectedItem?.id === item.id ? 'border-blue-500 bg-blue-100 dark:bg-blue-900' : 'border-transparent bg-white dark:bg-slate-700'}`}>
+                                    {item.icon}
+                                </button>
+                            ))}
+                            {inventory.length === 0 && <span className="text-sm italic">Kho trống. Hãy mua đồ ở Cửa Hàng!</span>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ShopTab = ({ user, setUser, shopItems }) => {
+            const buy = (item) => {
+                if(user.loc < item.price) return alert('Không đủ Lộc! 🍀');
+                setUser(prev => ({...prev, loc: prev.loc - item.price}));
+                const inv = JSON.parse(localStorage.getItem(`inv_${user.username}`)) || [];
+                inv.push({ id: Date.now(), icon: item.icon });
+                localStorage.setItem(`inv_${user.username}`, JSON.stringify(inv));
+                alert(`Mua thành công ${item.name}!`);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-green-100 dark:bg-green-900/50 text-center p-4 rounded-xl mb-6">
+                        <p className="text-xl">Lộc của bạn: <span className="font-bold text-green-600 dark:text-green-400">{user?.loc || 0} 🍀</span></p>
+                        <p className="text-sm">Chơi Mini-game hoặc điểm danh để nhận thêm Lộc!</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {shopItems.map(item => (
+                            <div key={item.id} className="bg-white/60 dark:bg-slate-800/60 p-4 rounded-xl text-center shadow">
+                                <div className="text-5xl mb-2">{item.icon}</div>
+                                <h3 className="font-bold">{item.name}</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">{item.type}</p>
+                                <button onClick={() => buy(item)} className="mt-3 w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded-lg">
+                                    {item.price} 🍀
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminDashboard = ({ rooms, setRooms, music, setMusic, shop, setShop }) => {
+            const [newRoom, setNewRoom] = useState({ title: '', tag: '', note: '', idea: '' });
+            
+            const handleAddRoom = (e) => {
+                e.preventDefault();
+                setRooms([{ ...newRoom, id: Date.now(), votes: 0, completed: false, createdAt: Date.now() }, ...rooms]);
+                setNewRoom({ title: '', tag: '', note: '', idea: '' });
+                alert('Thêm phòng thành công!');
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto space-y-8">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+                        <h2 className="text-2xl font-bold mb-4 border-b pb-2">🛠 Quản Lý Phòng</h2>
+                        <form onSubmit={handleAddRoom} className="grid gap-4 md:grid-cols-2">
+                            <input required placeholder="Tên phòng" className="p-2 border rounded dark:bg-slate-700 dark:border-slate-600" value={newRoom.title} onChange={e => setNewRoom({...newRoom, title: e.target.value})} />
+                            <input required placeholder="Tag (VD: Chill, Thiên nhiên...)" className="p-2 border rounded dark:bg-slate-700 dark:border-slate-600" value={newRoom.tag} onChange={e => setNewRoom({...newRoom, tag: e.target.value})} />
+                            <input required placeholder="Ghi chú" className="p-2 border rounded dark:bg-slate-700 dark:border-slate-600" value={newRoom.note} onChange={e => setNewRoom({...newRoom, note: e.target.value})} />
+                            <input required placeholder="Ý tưởng" className="p-2 border rounded dark:bg-slate-700 dark:border-slate-600" value={newRoom.idea} onChange={e => setNewRoom({...newRoom, idea: e.target.value})} />
+                            <button type="submit" className="md:col-span-2 bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700">Thêm Phòng Mới</button>
+                        </form>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+                        <h2 className="text-2xl font-bold mb-4 border-b pb-2">🎵 Quản Lý Nhạc</h2>
+                        <button onClick={() => {
+                            const title = prompt('Tên bài hát:');
+                            const artist = prompt('Ca sĩ:');
+                            const url = prompt('Link MP3:');
+                            if(title && url) setMusic([...music, { id: Date.now(), title, artist: artist||'Unknown', url }]);
+                        }} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Thêm Nhạc Bằng URL MP3</button>
+                        <ul className="mt-4 space-y-2">
+                            {music.map(m => (
+                                <li key={m.id} className="flex justify-between p-2 bg-gray-100 dark:bg-slate-700 rounded">
+                                    <span>{m.title} - {m.artist}</span>
+                                    <button onClick={() => setMusic(music.filter(x => x.id !== m.id))} className="text-red-500">Xóa</button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [isDark, setIsDark] = useLocalStorage('theme_dark', false);
+            const [users, setUsers] = useLocalStorage('users', []);
+            const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+            const [rooms, setRooms] = useLocalStorage('rooms', initialRooms);
+            const [music, setMusic] = useLocalStorage('music', initialMusic);
+            const [shop, setShop] = useLocalStorage('shop', initialShop);
+            
+            const [activeTab, setActiveTab] = useState('home');
+            const [showAuth, setShowAuth] = useState(false);
+            const [authMode, setAuthMode] = useState('login'); // login | register
+            const [authForm, setAuthForm] = useState({ username: '', password: '' });
+
+            useEffect(() => {
+                document.body.className = isDark ? 'dark' : 'light';
+            }, [isDark]);
+
+            const handleAuth = (e) => {
+                e.preventDefault();
+                if (authForm.username === 'admin' && authForm.password === 'bhnt2006') {
+                    setCurrentUser({ username: 'Admin', isAdmin: true, loc: 99999 });
+                    setShowAuth(false);
+                    return;
+                }
+
+                if (authMode === 'register') {
+                    if (users.find(u => u.username === authForm.username)) return alert('Tên đã tồn tại!');
+                    const newUser = { username: authForm.username, password: authForm.password, loc: 50, isAdmin: false };
+                    setUsers([...users, newUser]);
+                    setCurrentUser(newUser);
+                    alert('Đăng ký thành công! Nhận 50🍀 làm vốn.');
+                    setShowAuth(false);
+                } else {
+                    const u = users.find(u => u.username === authForm.username && u.password === authForm.password);
+                    if (u) { setCurrentUser(u); setShowAuth(false); }
+                    else alert('Sai tài khoản hoặc mật khẩu!');
+                }
+            };
+
+            const handleVote = (id) => {
+                setRooms(rooms.map(r => r.id === id ? { ...r, votes: r.votes + 1 } : r));
+                if(currentUser) {
+                    setCurrentUser(prev => ({...prev, loc: prev.loc + 1}));
+                    alert('+1 🍀 vì đã tương tác!');
+                }
+            };
+
+            const handleCompleteRoom = (id, url) => {
+                setRooms(rooms.map(r => r.id === id ? { ...r, completed: true, url } : r));
+            };
+
+            // Sorted rooms: Top 3 early/voted, then completed at bottom
+            const sortedRooms = useMemo(() => {
+                const active = rooms.filter(r => !r.completed).sort((a, b) => b.votes - a.votes);
+                const completed = rooms.filter(r => r.completed);
+                return [...active, ...completed];
+            }, [rooms]);
+
+            return (
+                <div className="min-h-screen relative pb-32">
+                    <BackgroundEffects isDark={isDark} />
+                    {currentUser && <HiddenItemSpawner onFind={(v) => setCurrentUser(prev => ({...prev, loc: prev.loc + v}))} />}
+
+                    {/* HEADER */}
+                    <header className="relative z-10 sticky top-0 backdrop-blur-md bg-white/30 dark:bg-slate-900/50 border-b border-white/20 shadow-sm">
+                        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
+                                {/* Logo Placeholder as requested */}
+                                <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden shadow-lg border-2 border-white">
+                                    <img src="https://via.placeholder.com/150?text=Logo" alt="Logo" className="w-full h-full object-cover mix-blend-overlay" />
+                                </div>
+                                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500 dark:from-pink-300 dark:to-violet-300">Quán Trọ Nhà Mèo</h1>
+                            </div>
+                            
+                            <nav className="hidden md:flex gap-6 font-semibold">
+                                <button onClick={() => setActiveTab('home')} className={activeTab === 'home' ? 'text-pink-500' : ''}>Phòng</button>
+                                <button onClick={() => { if(!currentUser) return setShowAuth(true); setActiveTab('games'); }} className={activeTab === 'games' ? 'text-pink-500' : ''}>Mini Games</button>
+                                <button onClick={() => { if(!currentUser) return setShowAuth(true); setActiveTab('house'); }} className={activeTab === 'house' ? 'text-pink-500' : ''}>Nhà Riêng</button>
+                                <button onClick={() => setActiveTab('shop')} className={activeTab === 'shop' ? 'text-pink-500' : ''}>Cửa Hàng</button>
+                                {currentUser?.isAdmin && <button onClick={() => setActiveTab('admin')} className="text-red-500">Admin</button>}
+                            </nav>
+
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setIsDark(!isDark)} className="text-2xl hover:scale-110 transition">
+                                    {isDark ? '☀️' : '🌙'}
+                                </button>
+                                {currentUser ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold hidden md:inline">{currentUser.username} ({currentUser.loc}🍀)</span>
+                                        <button onClick={() => setCurrentUser(null)} className="bg-gray-200 dark:bg-slate-700 px-3 py-1 rounded-full text-sm">Thoát</button>
+                                    </div>
+                                ) : (
+                                    <button onClick={() => setShowAuth(true)} className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-1.5 rounded-full font-bold shadow-md transition">Khách Mời</button>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* MAIN CONTENT */}
+                    <main className="relative z-10 max-w-6xl mx-auto px-4 py-8">
+                        {activeTab === 'home' && (
+                            <div>
+                                <h2 className="text-3xl font-bold mb-6 text-center">Bảng Ghim Quán Trọ 📌</h2>
+                                <div className="grid md:grid-cols-3 gap-6 mb-12">
+                                    {sortedRooms.slice(0, 3).map((room, i) => (
+                                        <div key={room.id} className="relative">
+                                            <div className="absolute -top-4 -left-4 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center font-bold text-black z-20 shadow-lg border-2 border-white">Top {i+1}</div>
+                                            <RoomCard room={room} onVote={handleVote} onComplete={handleCompleteRoom} isAdmin={currentUser?.isAdmin} />
+                                        </div>
+                                    ))}
+                                </div>
+                                <h3 className="text-2xl font-bold mb-4">Các phòng khác</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {sortedRooms.slice(3).map(room => (
+                                        <RoomCard key={room.id} room={room} onVote={handleVote} onComplete={handleCompleteRoom} isAdmin={currentUser?.isAdmin} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'games' && <GamesTab user={currentUser} setUser={setCurrentUser} isDark={isDark} />}
+                        {activeTab === 'house' && <HouseTab user={currentUser} setUser={setCurrentUser} />}
+                        {activeTab === 'shop' && <ShopTab user={currentUser} setUser={setCurrentUser} shopItems={shop} />}
+                        {activeTab === 'admin' && currentUser?.isAdmin && <AdminDashboard rooms={rooms} setRooms={setRooms} music={music} setMusic={setMusic} shop={shop} setShop={setShop} />}
+                    </main>
+
+                    {/* MUSIC PLAYER */}
+                    <MusicPlayer isDark={isDark} musicList={music} />
+
+                    {/* AUTH MODAL */}
+                    <AnimatePresence>
+                        {showAuth && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                                    className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm relative">
+                                    <button onClick={() => setShowAuth(false)} className="absolute top-4 right-4 text-gray-500 hover:text-black dark:hover:text-white">✕</button>
+                                    <h2 className="text-2xl font-bold text-center mb-6">{authMode === 'login' ? 'Đăng Nhập' : 'Đăng Ký'}</h2>
+                                    <form onSubmit={handleAuth} className="flex flex-col gap-4">
+                                        <input required placeholder="Tên / Biệt danh" className="p-3 rounded-lg border bg-gray-50 dark:bg-slate-700 dark:border-slate-600 focus:outline-pink-500"
+                                            value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} />
+                                        <input required type="password" placeholder="Mật khẩu" className="p-3 rounded-lg border bg-gray-50 dark:bg-slate-700 dark:border-slate-600 focus:outline-pink-500"
+                                            value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} />
+                                        <button type="submit" className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold py-3 rounded-lg mt-2 hover:opacity-90 shadow-lg">
+                                            {authMode === 'login' ? 'Vào Quán' : 'Nhận Chìa Khóa'}
+                                        </button>
+                                    </form>
+                                    <p className="text-center mt-4 text-sm">
+                                        {authMode === 'login' ? 'Người mới?' : 'Đã có chìa khóa?'} 
+                                        <span onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-pink-500 font-bold cursor-pointer ml-1">
+                                            {authMode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập'}
+                                        </span>
+                                    </p>
+                                    <p className="text-center text-xs text-gray-400 mt-6">(Admin pass: bhnt2006)</p>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
